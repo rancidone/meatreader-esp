@@ -1,0 +1,18 @@
+idf_component_register(
+    SRCS
+        "http_server.c"
+        "routes_temps.c"
+        "routes_config.c"
+        "routes_calibration.c"
+        "routes_status.c"
+    INCLUDE_DIRS "include"
+    REQUIRES
+        esp_http_server
+        json
+        sensor_mgr
+        config_mgr
+        calibration
+        ref_sensor
+        esp_timer
+        freertos
+)

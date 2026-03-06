@@ -1,0 +1,8 @@
+{
+  "C_Cpp.intelliSenseEngine": "default",
+  "files.associations": {
+    "ads1115.h": "c",
+    "i2c_types.h": "c",
+    "i2c_master.h": "c"
+  }
+}
