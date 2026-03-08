@@ -12,7 +12,7 @@ static const char *TAG = "config_mgr";
 
 #define NVS_NAMESPACE   "meatreader"
 #define NVS_KEY_CONFIG  "dev_config"
-#define BLOB_VERSION    2u
+#define BLOB_VERSION    3u
 
 // Versioned NVS blob. Version field guards against struct layout changes.
 typedef struct {
