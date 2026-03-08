@@ -21,17 +21,17 @@
 
 ### Cook profiles (UI)
 
-- [ ] Create `src/lib/stores/profileStore.svelte.ts`: fetch/save profiles from `/profiles`, persist selection in `localStorage`
-- [ ] Create `src/views/Profiles.svelte`: profile library view — list, create, edit, delete, apply to channels
-- [ ] Pre-seed a read-only "starter library" in the UI (not firmware): common presets with USDA-safe temps:
+- [x] Create `src/lib/stores/profileStore.svelte.ts`: fetch/save profiles from `/profiles`, persist selection in `localStorage`
+- [x] Create `src/views/Profiles.svelte`: profile library view — list, create, edit, delete, apply to channels
+- [x] Pre-seed a read-only "starter library" in the UI (not firmware): common presets with USDA-safe temps:
   - Brisket: 165°F wrap, 203°F finish
   - Pork shoulder: 165°F wrap, 200°F finish
   - Chicken breast: 165°F
   - Medium-rare beef: 130°F
   - Medium beef: 145°F
-- [ ] Add profile selector dropdown to `ChannelCard` — applying a profile sets that channel's alert target
-- [ ] Show stall badge on `ChannelCard` when `stall_detected === true` with elapsed stall time
-- [ ] Multi-stage cook progress: show current stage and next target on ChannelCard when a multi-stage profile is active
+- [x] Add profile selector dropdown to `ChannelCard` — applying a profile sets that channel's alert target
+- [x] Show stall badge on `ChannelCard` when `stall_detected === true` with elapsed stall time
+- [x] Multi-stage cook progress: show current stage and next target on ChannelCard when a multi-stage profile is active
 
 ---
 
