@@ -13,7 +13,7 @@ static const char *TAG = "route_events";
 // Timeout between event group waits.  If the sensor task stalls we still
 // want the handler to exit so the client can reconnect instead of holding
 // the connection open indefinitely.
-#define SSE_WAIT_TIMEOUT_MS  5000
+#define SSE_WAIT_TIMEOUT_MS  2000
 
 // GET /events
 // Streams sensor snapshots as Server-Sent Events.
@@ -23,6 +23,10 @@ static const char *TAG = "route_events";
 esp_err_t handle_events(httpd_req_t *req)
 {
     http_app_ctx_t *ctx = (http_app_ctx_t *)req->user_ctx;
+    if (!ctx || !ctx->sensor || !ctx->config) {
+        ESP_LOGW(TAG, "GET /events → unavailable (context not ready)");
+        return send_error(req, 503, "events unavailable");
+    }
 
     httpd_resp_set_type(req, "text/event-stream");
     httpd_resp_set_hdr(req, "Cache-Control", "no-cache");
@@ -33,7 +37,7 @@ esp_err_t handle_events(httpd_req_t *req)
     esp_err_t err = httpd_resp_send_chunk(req, "retry: 3000\n\n", 13);
     if (err != ESP_OK) {
         ESP_LOGD(TAG, "GET /events → client gone before first chunk");
-        return err;
+        return ESP_OK;
     }
 
     EventGroupHandle_t eg = sensor_mgr_get_event_group(ctx->sensor);
@@ -56,7 +60,7 @@ esp_err_t handle_events(httpd_req_t *req)
             err = httpd_resp_send_chunk(req, ": keep-alive\n\n", 14);
             if (err != ESP_OK) {
                 ESP_LOGD(TAG, "GET /events → client disconnected (keep-alive failed)");
-                return err;
+                return ESP_OK;
             }
             continue;
         }
@@ -92,7 +96,7 @@ esp_err_t handle_events(httpd_req_t *req)
 
         if (err != ESP_OK) {
             ESP_LOGD(TAG, "GET /events → client disconnected");
-            return err;
+            return ESP_OK;
         }
     }
 }

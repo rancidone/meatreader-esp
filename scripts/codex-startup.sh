@@ -19,10 +19,14 @@ IDF_REPO_URL="https://github.com/espressif/esp-idf.git"
 : "${IDF_VERSION:=$IDF_VERSION_DEFAULT}"
 : "${IDF_TARGET:=$IDF_TARGET_DEFAULT}"
 : "${INSTALL_SYSTEM_PACKAGES:=0}"   # 1 to run apt-get install
-: "${INSTALL_UI_DEPS:=1}"            # 1 to run npm ci
+: "${INSTALL_UI_DEPS:=1}"            # 1 to run npm install
 
 log() {
   printf '\n[%s] %s\n' "$(date +'%Y-%m-%d %H:%M:%S')" "$*"
+}
+
+warn() {
+  printf '\n[%s] WARNING: %s\n' "$(date +'%Y-%m-%d %H:%M:%S')" "$*" >&2
 }
 
 die() {
@@ -43,6 +47,8 @@ validate_inputs() {
 }
 
 install_apt_packages() {
+  local -a apt_cmd
+
   if [[ "$INSTALL_SYSTEM_PACKAGES" != "1" ]]; then
     log "Skipping OS package install (set INSTALL_SYSTEM_PACKAGES=1 to enable)"
     return
@@ -50,10 +56,18 @@ install_apt_packages() {
 
   command -v apt-get >/dev/null 2>&1 || die "apt-get not available, cannot install packages"
 
+  if [[ "$(id -u)" -eq 0 ]]; then
+    apt_cmd=(apt-get)
+  elif command -v sudo >/dev/null 2>&1; then
+    apt_cmd=(sudo apt-get)
+  else
+    die "apt-get requires elevated privileges and sudo is unavailable"
+  fi
+
   log "Installing OS packages required for ESP-IDF + this repo"
   export DEBIAN_FRONTEND=noninteractive
-  apt-get update -y
-  apt-get install -y --no-install-recommends \
+  "${apt_cmd[@]}" update -y
+  "${apt_cmd[@]}" install -y --no-install-recommends \
     ca-certificates \
     curl \
     git \
@@ -91,14 +105,48 @@ install_esp_idf() {
 }
 
 validate_idf_py() {
+  local export_log
+  local export_rc
+
   [[ -f "$IDF_PATH/export.sh" ]] || die "expected export script missing: $IDF_PATH/export.sh"
 
-  log "Validating idf.py availability"
-  # shellcheck disable=SC1090
-  source "$IDF_PATH/export.sh" >/dev/null
+  log "Validating idf.py availability (tolerating optional tool issues)"
+  export_log="$(mktemp)"
 
-  require_cmd idf.py
-  idf.py --version
+  set +e
+  # shellcheck disable=SC1090
+  source "$IDF_PATH/export.sh" >"$export_log" 2>&1
+  export_rc=$?
+  set -e
+
+  if [[ "$export_rc" -ne 0 ]]; then
+    warn "ESP-IDF export reported issues. This is often caused by optional tools in minimal containers."
+    warn "Continuing with fallback idf.py validation."
+  fi
+
+  if command -v idf.py >/dev/null 2>&1; then
+    if idf.py --version; then
+      rm -f "$export_log"
+      return
+    fi
+    warn "idf.py is on PATH but failed to run."
+  fi
+
+  if [[ -x "$IDF_PATH/tools/idf.py" ]]; then
+    if IDF_PATH="$IDF_PATH" "$IDF_PATH/tools/idf.py" --version; then
+      rm -f "$export_log"
+      return
+    fi
+    warn "Fallback idf.py at $IDF_PATH/tools/idf.py failed to run."
+  fi
+
+  echo "ERROR: idf.py is not available after setup." >&2
+  if [[ "$export_rc" -ne 0 ]]; then
+    echo "Last lines from export.sh output:" >&2
+    tail -n 20 "$export_log" >&2 || true
+  fi
+  rm -f "$export_log"
+  exit 1
 }
 
 install_ui_deps() {

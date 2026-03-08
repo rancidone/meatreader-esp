@@ -25,6 +25,14 @@ static const char *TAG = "sensor_mgr";
 
 // Number of consecutive errors before a channel is skipped for one tick.
 #define CONSEC_ERROR_SKIP_THRESHOLD  5
+// ADC stabilization: discard one conversion after each mux switch, then
+// average a small number of samples to reduce quantization and pickup noise.
+#define ADS_SETTLE_DISCARD_SAMPLES   1
+#define ADS_OVERSAMPLE_SAMPLES       2
+// Open probe detection. Floating/open thermistor inputs tend to sit near
+// full-scale with large jitter, which appears as oscillating cold values.
+#define OPEN_CIRCUIT_RAW_THRESHOLD   32000
+#define OPEN_CIRCUIT_RES_OHMS        2000000.0f
 
 struct sensor_mgr {
     ads1115_handle_t   ads;
@@ -41,6 +49,30 @@ struct sensor_mgr {
 };
 
 // ── Sampling ──────────────────────────────────────────────────────────────────
+
+static esp_err_t read_channel_smoothed(struct sensor_mgr *mgr, int adc_channel,
+                                       int16_t *out_raw)
+{
+    const int total_reads = ADS_SETTLE_DISCARD_SAMPLES + ADS_OVERSAMPLE_SAMPLES;
+    int32_t sum = 0;
+    int kept = 0;
+
+    for (int i = 0; i < total_reads; i++) {
+        int16_t raw = 0;
+        esp_err_t err = ads1115_read_channel(mgr->ads, adc_channel, &raw);
+        if (err != ESP_OK) return err;
+
+        if (i < ADS_SETTLE_DISCARD_SAMPLES) {
+            continue;
+        }
+        sum += raw;
+        kept++;
+    }
+
+    if (kept <= 0) return ESP_FAIL;
+    *out_raw = (int16_t)(sum / kept);
+    return ESP_OK;
+}
 
 static channel_reading_t sample_channel(struct sensor_mgr *mgr, int idx,
                                          const channel_config_t *ch_cfg,
@@ -66,9 +98,13 @@ static channel_reading_t sample_channel(struct sensor_mgr *mgr, int idx,
     }
 
     int16_t raw = 0;
-    esp_err_t err = ads1115_read_channel(mgr->ads, ch_cfg->adc_channel, &raw);
+    esp_err_t err = read_channel_smoothed(mgr, ch_cfg->adc_channel, &raw);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "ch%d: ADS1115 read failed: %s", idx, esp_err_to_name(err));
+        return r;
+    }
+    if (raw >= OPEN_CIRCUIT_RAW_THRESHOLD) {
+        ESP_LOGW(TAG, "ch%d: likely open circuit (raw=%d)", idx, raw);
         return r;
     }
 
@@ -79,8 +115,8 @@ static channel_reading_t sample_channel(struct sensor_mgr *mgr, int idx,
         BOARD_ADS_VFS, BOARD_ADC_VREF, BOARD_ADC_MAX
     );
 
-    if (r.resistance_ohms >= 1.0e8f) {
-        ESP_LOGW(TAG, "ch%d: resistance out of range (%.0f ohms) — open circuit?",
+    if (r.resistance_ohms >= OPEN_CIRCUIT_RES_OHMS) {
+        ESP_LOGW(TAG, "ch%d: likely open circuit (%.0f ohms)",
                  idx, r.resistance_ohms);
         return r;
     }
@@ -182,9 +218,10 @@ static void sensor_task(void *pvParam)
         if (rate > SAMPLE_RATE_MAX_HZ) rate = SAMPLE_RATE_MAX_HZ;
         uint32_t delay_ms = (uint32_t)(1000.0f / rate);
 
-        // Each ADS1115 read takes ~12ms per channel, so account for that.
-        // Two channels = ~24ms reading time.
-        uint32_t read_time_ms = CONFIG_NUM_CHANNELS * 12;
+        // Account for ADS1115 conversion time: each channel performs one
+        // settle-discard conversion plus oversampled conversions.
+        uint32_t reads_per_channel = ADS_SETTLE_DISCARD_SAMPLES + ADS_OVERSAMPLE_SAMPLES;
+        uint32_t read_time_ms = CONFIG_NUM_CHANNELS * reads_per_channel * 12;
         if (delay_ms > read_time_ms) {
             vTaskDelay(pdMS_TO_TICKS(delay_ms - read_time_ms));
         }
