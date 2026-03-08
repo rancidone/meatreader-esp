@@ -1,14 +1,37 @@
 <script lang="ts">
   import { deviceStore } from '../lib/stores/device.svelte.ts';
   import { ui }          from '../lib/stores/ui.svelte.ts';
-  import { formatUptime } from '../lib/utils/format.ts';
+  import { formatUptime, formatResistance } from '../lib/utils/format.ts';
+  import { temps as tempsApi, ApiError } from '../lib/api/live.ts';
+  import type { Snapshot } from '../lib/api/live.ts';
+  import QualityBadge from '../lib/components/common/QualityBadge.svelte';
+
+  let rawSnapshot = $state<Snapshot | null>(null);
+  let rawError    = $state<string | null>(null);
+  let rawTimer: ReturnType<typeof setInterval> | null = null;
+
+  async function pollRaw(): Promise<void> {
+    try {
+      rawSnapshot = await tempsApi.latest();
+      rawError    = null;
+    } catch (e) {
+      if (e instanceof ApiError && e.httpStatus === 503) return;
+      rawError = e instanceof Error ? e.message : String(e);
+    }
+  }
 
   $effect(() => {
     if (ui.polling) {
       deviceStore.start(10_000);
-      return () => deviceStore.stop();
+      void pollRaw();
+      rawTimer = setInterval(() => void pollRaw(), 2_000);
+      return () => {
+        deviceStore.stop();
+        if (rawTimer !== null) { clearInterval(rawTimer); rawTimer = null; }
+      };
     } else {
       deviceStore.stop();
+      if (rawTimer !== null) { clearInterval(rawTimer); rawTimer = null; }
     }
   });
 </script>
@@ -77,6 +100,37 @@
     {/if}
   </div>
 
+  <!-- ── Raw readings ──────────────────────────────────────────────────────── -->
+  <div class="card">
+    <h3>Raw readings</h3>
+    {#if rawError}
+      <p class="muted error-text">{rawError}</p>
+    {:else if rawSnapshot}
+      <table class="info-table raw-table">
+        <thead>
+          <tr>
+            <th>Ch</th>
+            <th>ADC</th>
+            <th>Resistance</th>
+            <th>Quality</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each rawSnapshot.channels as ch}
+            <tr>
+              <td>{ch.id}</td>
+              <td>{ch.raw_adc ?? '—'}</td>
+              <td>{ch.resistance_ohms !== undefined ? formatResistance(ch.resistance_ohms) : '—'}</td>
+              <td><QualityBadge quality={ch.quality} /></td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    {:else}
+      <p class="muted">Waiting for sensor data…</p>
+    {/if}
+  </div>
+
 </div>
 
 <style>
@@ -140,5 +194,35 @@
     border-radius: var(--radius);
     padding: 0.5rem 0.85rem;
     font-size: 0.85rem;
+  }
+
+  .raw-table thead th {
+    text-align: left;
+    color: var(--color-text-muted);
+    font-weight: 400;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.3rem 0.6rem 0.3rem 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .raw-table tbody td {
+    padding: 0.3rem 0.6rem 0.3rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+  }
+
+  .raw-table tbody tr + tr td {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .error-text {
+    color: var(--color-error);
+  }
+
+  .muted {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
   }
 </style>
