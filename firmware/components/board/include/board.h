@@ -31,5 +31,3 @@
 #define BOARD_ADC_VREF         3.3f     // divider supply voltage
 #define BOARD_ADC_MAX          32767.0f // ADS1115 max count (16-bit signed)
 
-// ── Channel count ─────────────────────────────────────────────────────────────
-#define BOARD_NUM_CHANNELS     2

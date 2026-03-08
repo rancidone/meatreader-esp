@@ -2,8 +2,8 @@
 #include <math.h>
 #include <stdbool.h>
 
-// Coefficients from Toit prototype: approximate for 100K NTC thermistor.
-// Source: resistance_model.toit defaults.
+// Approximate default coefficients for a 100K NTC thermistor.
+// Replace via calibration for accurate readings.
 const sh_coeffs_t THERM_MATH_DEFAULT_COEFFS = {
     .a = 7.322291889e-4,
     .b = 2.132158182e-4,
