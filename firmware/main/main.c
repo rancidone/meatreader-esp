@@ -8,8 +8,9 @@
 //   5. ADS1115 init (fatal on failure)
 //   6. DS18B20 init (optional; logs warning on failure)
 //   7. Sensor manager init + start
-//   8. WiFi connect + wait (non-fatal timeout)
-//   9. HTTP server start
+//   8. WiFi: if credentials present → STA (with fallback to SoftAP on failure);
+//            if no credentials → SoftAP / captive portal directly
+//   9. HTTP server start (provisioning or normal mode)
 
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
@@ -31,8 +32,9 @@
 
 static const char *TAG = "main";
 
-// WiFi connect timeout before proceeding to HTTP start anyway.
+// WiFi connect timeout before falling back to SoftAP.
 #define WIFI_CONNECT_TIMEOUT_MS  15000
+#define SOFTAP_SSID              "Meatreader-Setup"
 
 void app_main(void)
 {
@@ -65,8 +67,6 @@ void app_main(void)
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "ADS1115 init failed: %s — cannot sample thermistors, halting",
                  esp_err_to_name(err));
-        // In production firmware, a fatal hardware fault should restart and
-        // allow the watchdog to handle recovery, not spin forever.
         esp_restart();
     }
     ESP_LOGI(TAG, "ADS1115 ready at I2C 0x%02X", BOARD_ADS1115_ADDR);
@@ -96,29 +96,42 @@ void app_main(void)
     device_config_t cfg;
     config_mgr_get_active(config, &cfg);
 
-    ESP_ERROR_CHECK(wifi_mgr_init());
-    if (strlen(cfg.wifi_ssid) > 0) {
+    bool provisioning = false;
+
+    if (strlen(cfg.wifi_ssid) == 0) {
+        // No credentials — go straight to SoftAP for first-time setup.
+        ESP_LOGW(TAG, "No WiFi credentials — starting SoftAP \"%s\"", SOFTAP_SSID);
+        ESP_ERROR_CHECK(wifi_mgr_start_softap(SOFTAP_SSID));
+        provisioning = true;
+    } else {
+        // Credentials present — attempt STA connection.
         ESP_LOGI(TAG, "Connecting to WiFi SSID: %s", cfg.wifi_ssid);
+        ESP_ERROR_CHECK(wifi_mgr_init());
         ESP_ERROR_CHECK(wifi_mgr_connect(cfg.wifi_ssid, cfg.wifi_password));
         err = wifi_mgr_wait_connected(WIFI_CONNECT_TIMEOUT_MS);
+
         if (err != ESP_OK) {
-            ESP_LOGW(TAG, "WiFi connect timed out — starting HTTP server anyway");
+            // STA failed — fall back to SoftAP so the user can re-provision.
+            ESP_LOGW(TAG, "WiFi connect failed — falling back to SoftAP \"%s\"", SOFTAP_SSID);
+            wifi_mgr_deinit();
+            ESP_ERROR_CHECK(wifi_mgr_start_softap(SOFTAP_SSID));
+            provisioning = true;
         } else {
             ESP_LOGI(TAG, "WiFi connected, IP: %s", wifi_mgr_get_ip());
         }
-    } else {
-        ESP_LOGW(TAG, "No WiFi SSID configured — set via PATCH /config/staged + apply + commit");
     }
 
     // ── HTTP server ───────────────────────────────────────────────────────
     http_app_ctx_t http_ctx = {
-        .sensor      = sensor,
-        .config      = config,
-        .calibration = cal,
-        .ds18        = ds18,
+        .sensor       = sensor,
+        .config       = config,
+        .calibration  = cal,
+        .ds18         = ds18,
+        .provisioning = provisioning,
     };
     ESP_ERROR_CHECK(http_server_start(&http_ctx));
-    ESP_LOGI(TAG, "HTTP server started on port 80");
+    ESP_LOGI(TAG, "HTTP server started on port 80 (%s mode)",
+             provisioning ? "provisioning" : "normal");
 
     // app_main must not return; park it.
     while (1) {

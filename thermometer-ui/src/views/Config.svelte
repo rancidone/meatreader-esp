@@ -157,6 +157,7 @@
 
       <fieldset>
         <legend>Wi-Fi</legend>
+        <p class="hint warn-hint">Warning: saving new WiFi credentials will restart the device.</p>
         <div class="field-row">
           <div class="field">
             <label for="ssid">SSID</label>
@@ -406,6 +407,11 @@
   .hint {
     font-size: 0.72rem;
     color: var(--color-text-muted);
+  }
+
+  .warn-hint {
+    color: var(--color-warn);
+    margin: 0;
   }
 
   .checkbox-field label {
