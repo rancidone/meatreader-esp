@@ -27,6 +27,7 @@
 #include "config_mgr.h"
 #include "sensor_mgr.h"
 #include "calibration.h"
+#include "alert_mgr.h"
 #include "wifi_mgr.h"
 #include "http_server.h"
 
@@ -92,6 +93,11 @@ void app_main(void)
     calibration_mgr_t *cal = NULL;
     ESP_ERROR_CHECK(calibration_init(config, &cal));
 
+    // ── Alert manager ─────────────────────────────────────────────────────────
+    alert_mgr_t *alert_mgr = NULL;
+    ESP_ERROR_CHECK(alert_mgr_init(config, sensor, &alert_mgr));
+    ESP_LOGI(TAG, "Alert manager started");
+
     // ── WiFi ──────────────────────────────────────────────────────────────
     device_config_t cfg;
     config_mgr_get_active(config, &cfg);
@@ -127,6 +133,7 @@ void app_main(void)
         .config       = config,
         .calibration  = cal,
         .ds18         = ds18,
+        .alert_mgr    = alert_mgr,
         .provisioning = provisioning,
     };
     ESP_ERROR_CHECK(http_server_start(&http_ctx));
