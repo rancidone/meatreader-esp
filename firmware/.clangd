@@ -2,8 +2,13 @@ CompileFlags:
   # compile_commands.json lives in build/ — point clangd at it.
   CompilationDatabase: build/
 
+  # Add the project's clangd stub directory so clangd can resolve headers that
+  # normally come from the Xtensa toolchain sysroot (e.g. <machine/endian.h>).
+  # This path is relative to the directory containing this .clangd file.
+  Add:
+    - -Iclangd_stubs
+
   # Strip Xtensa / ESP-IDF-specific GCC flags that host clang doesn't understand.
-  # These cause "unknown argument" spam and the machine/endian.h false positive.
   Remove:
     - -mlongcalls
     - -mtext-section-literals
