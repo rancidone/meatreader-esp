@@ -8,12 +8,14 @@
 #define CONFIG_NUM_CHANNELS     2
 #define CONFIG_WIFI_SSID_MAX    64
 #define CONFIG_WIFI_PASS_MAX    64
+#define CONFIG_CHANNEL_LABEL_MAX 32
 
 // Per-channel thermistor configuration.
 typedef struct {
     bool        enabled;
     int         adc_channel;   // ADS1115 channel index (0 or 1)
     sh_coeffs_t sh;            // Steinhart-Hart coefficients
+    char        label[CONFIG_CHANNEL_LABEL_MAX]; // Human-readable name
 } channel_config_t;
 
 // Full device configuration. Three copies are held by config_mgr:

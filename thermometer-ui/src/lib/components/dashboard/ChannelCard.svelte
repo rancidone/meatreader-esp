@@ -10,14 +10,15 @@
     snapshots: Snapshot[];
     unit:      TempUnit;
     color:     string;
+    label?:    string;
     onclick?:  () => void;
   }
-  const { reading, snapshots, unit, color, onclick }: Props = $props();
+  const { reading, snapshots, unit, color, label, onclick }: Props = $props();
 </script>
 
 <div class="card channel-card">
   <div class="card-header">
-    <h2>Channel {reading?.id ?? '—'}</h2>
+    <h2>{label || `Channel ${reading?.id ?? '—'}`}</h2>
     {#if reading}
       <QualityBadge quality={reading.quality} />
     {:else}

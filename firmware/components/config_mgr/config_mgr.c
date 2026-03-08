@@ -41,6 +41,7 @@ static void apply_defaults(device_config_t *cfg)
         cfg->channels[i].enabled     = true;
         cfg->channels[i].adc_channel = i;
         cfg->channels[i].sh          = THERM_MATH_DEFAULT_COEFFS;
+        snprintf(cfg->channels[i].label, CONFIG_CHANNEL_LABEL_MAX, "Channel %d", i);
     }
 }
 
@@ -68,10 +69,14 @@ static esp_err_t nvs_load_config(device_config_t *out)
     }
 
     // Validate S-H coefficients; replace with defaults if corrupted.
+    // Also backfill label if empty (e.g. blobs written before label was added).
     for (int i = 0; i < CONFIG_NUM_CHANNELS; i++) {
         if (!therm_math_sh_valid(&blob.data.channels[i].sh)) {
             ESP_LOGW(TAG, "ch%d: invalid S-H coefficients in NVS, using defaults", i);
             blob.data.channels[i].sh = THERM_MATH_DEFAULT_COEFFS;
+        }
+        if (blob.data.channels[i].label[0] == '\0') {
+            snprintf(blob.data.channels[i].label, CONFIG_CHANNEL_LABEL_MAX, "Channel %d", i);
         }
     }
 

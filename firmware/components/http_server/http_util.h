@@ -161,6 +161,7 @@ static inline cJSON *channel_config_to_json(const channel_config_t *ch)
     cJSON *obj = cJSON_CreateObject();
     cJSON_AddBoolToObject(obj,   "enabled",       ch->enabled);
     cJSON_AddNumberToObject(obj, "adc_channel",   ch->adc_channel);
+    cJSON_AddStringToObject(obj, "label",         ch->label);
     cJSON_AddItemToObject(obj,   "steinhart_hart", sh_coeffs_to_json(&ch->sh));
     return obj;
 }
