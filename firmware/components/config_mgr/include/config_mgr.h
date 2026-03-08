@@ -12,7 +12,7 @@
 
 // Bumped whenever device_config_t layout changes. Mismatched NVS blobs are
 // discarded and defaults are restored instead.
-#define CONFIG_SCHEMA_VERSION   2u
+#define CONFIG_SCHEMA_VERSION   4u
 
 // Per-channel thermistor configuration.
 typedef struct {
@@ -37,10 +37,38 @@ typedef struct {
     char           webhook_url[128];
     // Runtime state — true after alert fires; cleared by hysteresis (5°C drop).
     bool           triggered;
+    // Stall alert: fire when temperature hasn't risen > 2°C over 20 minutes.
+    bool           stall_alert_enabled;
 } channel_alert_t;
 
-// Full device configuration. Three copies are held by config_mgr:
-// persisted (NVS), active (running), staged (pending edits).
+// ── Cook profile types ────────────────────────────────────────────────────────
+
+// A single stage within a cook profile.
+typedef struct {
+    float   target_temp_c;
+    uint8_t alert_method;    // alert_method_t value
+    char    label[32];
+} stage_t;
+
+#define COOK_PROFILE_MAX_STAGES   4
+#define COOK_PROFILE_MAX_PROFILES 8
+
+// A named cook profile with up to COOK_PROFILE_MAX_STAGES sequential stages.
+typedef struct {
+    char    name[32];
+    uint8_t num_stages;
+    stage_t stages[COOK_PROFILE_MAX_STAGES];
+} cook_profile_t;
+
+// All cook profiles stored on the device.
+typedef struct {
+    cook_profile_t profiles[COOK_PROFILE_MAX_PROFILES];
+} cook_profiles_t;
+
+// ── Full device configuration ─────────────────────────────────────────────────
+
+// Three copies are held by config_mgr: persisted (NVS), active (running),
+// staged (pending edits).
 typedef struct {
     uint32_t schema_version;       // must equal CONFIG_SCHEMA_VERSION; checked on NVS load
     char  wifi_ssid[CONFIG_WIFI_SSID_MAX];
@@ -50,6 +78,7 @@ typedef struct {
     float spike_reject_delta_c;    // reject samples jumping more than this many °C from EMA
     channel_config_t channels[CONFIG_NUM_CHANNELS];
     channel_alert_t  alerts[CONFIG_NUM_CHANNELS];
+    cook_profiles_t  cook;         // cook profiles library (8 slots)
 } device_config_t;
 
 #define CONFIG_DEFAULT_SAMPLE_RATE_HZ      2.0f
