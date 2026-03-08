@@ -4,8 +4,6 @@ set -Eeuo pipefail
 # Codex Cloud bootstrap for meatreader-esp.
 #
 # Security posture for public-repo safety:
-# - avoids modifying shell startup files unless explicitly enabled
-# - avoids auto-trusting/auto-executing direnv unless explicitly enabled
 # - can skip system package installation by default (least privilege)
 # - uses pinned ESP-IDF version by default; configurable when needed
 
@@ -22,8 +20,6 @@ IDF_REPO_URL="https://github.com/espressif/esp-idf.git"
 : "${IDF_TARGET:=$IDF_TARGET_DEFAULT}"
 : "${INSTALL_SYSTEM_PACKAGES:=0}"   # 1 to run apt-get install
 : "${INSTALL_UI_DEPS:=1}"            # 1 to run npm ci
-: "${ENABLE_DIRENV_HOOK:=0}"         # 1 to append hook to ~/.bashrc
-: "${ENABLE_DIRENV_ALLOW:=0}"        # 1 to run direnv allow in firmware/
 
 log() {
   printf '\n[%s] %s\n' "$(date +'%Y-%m-%d %H:%M:%S')" "$*"
@@ -60,7 +56,6 @@ install_apt_packages() {
   apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
-    direnv \
     git \
     build-essential \
     cmake \
@@ -93,41 +88,6 @@ install_esp_idf() {
 
   log "Running ESP-IDF tool installer for target: $IDF_TARGET"
   "$IDF_PATH/install.sh" "$IDF_TARGET"
-}
-
-enable_direnv_for_repo() {
-  command -v direnv >/dev/null 2>&1 || {
-    log "direnv not installed; skipping direnv integration"
-    return
-  }
-
-  if [[ "$ENABLE_DIRENV_HOOK" == "1" ]]; then
-    local shell_rc="$HOME/.bashrc"
-    local hook='eval "$(direnv hook bash)"'
-
-    if [[ -f "$shell_rc" ]]; then
-      if ! grep -Fq "$hook" "$shell_rc"; then
-        log "Adding direnv hook to $shell_rc"
-        printf '\n# Added by meatreader-esp startup script\n%s\n' "$hook" >> "$shell_rc"
-      else
-        log "direnv hook already present in $shell_rc"
-      fi
-    else
-      log "Creating $shell_rc with direnv hook"
-      printf '# Added by meatreader-esp startup script\n%s\n' "$hook" > "$shell_rc"
-    fi
-  else
-    log "Skipping ~/.bashrc mutation (set ENABLE_DIRENV_HOOK=1 to enable)"
-  fi
-
-  if [[ "$ENABLE_DIRENV_ALLOW" == "1" ]]; then
-    if [[ -d "$FIRMWARE_DIR" ]]; then
-      log "Running direnv allow in firmware directory"
-      (cd "$FIRMWARE_DIR" && direnv allow)
-    fi
-  else
-    log "Skipping direnv allow (set ENABLE_DIRENV_ALLOW=1 to enable)"
-  fi
 }
 
 validate_idf_py() {
@@ -166,13 +126,11 @@ Bootstrap complete.
 Defaults are conservative for public-repo safety.
 Use these to enable more automation:
   INSTALL_SYSTEM_PACKAGES=1
-  ENABLE_DIRENV_HOOK=1
-  ENABLE_DIRENV_ALLOW=1
 
 Next steps:
   1) If needed, install OS deps: INSTALL_SYSTEM_PACKAGES=1 ./scripts/codex-startup.sh
   2) Enter firmware dir: cd "$FIRMWARE_DIR"
-  3) Source IDF env (if not using direnv): source "$IDF_PATH/export.sh"
+  3) Source IDF env: source "$IDF_PATH/export.sh"
   4) Confirm idf.py: which idf.py && idf.py --version
   5) Build firmware: idf.py build
   6) Run UI dev server: cd "$UI_DIR" && npm run dev
@@ -189,7 +147,6 @@ main() {
   validate_inputs
   install_apt_packages
   install_esp_idf
-  enable_direnv_for_repo
   validate_idf_py
   install_ui_deps
   summary
