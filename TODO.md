@@ -65,23 +65,23 @@ Generated from planning session 2026-03-08.
 
 ### Firmware — SSE endpoint
 
-- [ ] Add `EventGroupHandle_t snapshot_event_group` to `struct sensor_mgr`
-- [ ] Expose via `sensor_mgr_get_event_group()` in `sensor_mgr.h`
-- [ ] Call `xEventGroupSetBits` after each snapshot update in the sensor task
-- [ ] Create `firmware/components/http_server/routes_events.c`:
+- [x] Add `EventGroupHandle_t snapshot_event_group` to `struct sensor_mgr`
+- [x] Expose via `sensor_mgr_get_event_group()` in `sensor_mgr.h`
+- [x] Call `xEventGroupSetBits` after each snapshot update in the sensor task
+- [x] Create `firmware/components/http_server/routes_events.c`:
   - `GET /events` handler
   - Set SSE headers: `Content-Type: text/event-stream`, `Cache-Control: no-cache`, `Connection: keep-alive`, `Access-Control-Allow-Origin: *`
   - Send `retry: 3000\n\n`
   - Loop: `xEventGroupWaitBits` → serialize snapshot → `httpd_resp_send_chunk("data: {json}\n\n")` → exit on send error
-- [ ] Register `/events` in `s_uris[]`; bump `max_uri_handlers` headroom accordingly
-- [ ] Add `/events` to Vite proxy in `vite.config.ts`
+- [x] Register `/events` in `s_uris[]`; bump `max_uri_handlers` headroom accordingly
+- [x] Add `/events` to Vite proxy in `vite.config.ts`
 
 ### UI — wire SSE
 
-- [ ] Rewrite `src/lib/api/live.ts` to use `EventSource('/events')` instead of polling
-- [ ] Subscribe in `tempsStore.start()` via `temps.subscribe(...)` instead of `setInterval`
-- [ ] Keep `deviceStore` on polling (`/status` every 15s — low frequency, no benefit from SSE)
-- [ ] Ensure `lastUpdated` and `error` states still update correctly via SSE callback
+- [x] Rewrite `src/lib/api/live.ts` to use `EventSource('/events')` instead of polling
+- [x] Subscribe in `tempsStore.start()` via `temps.subscribe(...)` instead of `setInterval`
+- [x] Keep `deviceStore` on polling (`/status` every 15s — low frequency, no benefit from SSE)
+- [x] Ensure `lastUpdated` and `error` states still update correctly via SSE callback
 
 ---
 
