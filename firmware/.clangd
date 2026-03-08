@@ -1,0 +1,27 @@
+CompileFlags:
+  # compile_commands.json lives in build/ — point clangd at it.
+  CompilationDatabase: build/
+
+  # Add the project's clangd stub directory so clangd can resolve headers that
+  # normally come from the Xtensa toolchain sysroot (e.g. <machine/endian.h>).
+  # This path is relative to the directory containing this .clangd file.
+  Add:
+    - -Iclangd_stubs
+
+  # Strip Xtensa / ESP-IDF-specific GCC flags that host clang doesn't understand.
+  Remove:
+    - -mlongcalls
+    - -mtext-section-literals
+    - -mfix-esp32-psram-cache-issue
+    - -mfix-esp32-psram-cache-strategy*
+    - -fno-shrink-wrap
+    - -fstrict-volatile-bitfields
+    - -fno-tree-switch-conversion
+    - -fno-rtti
+    - -fno-exceptions
+    - --specs=*
+    - --sysroot=*
+    - -march=xtensa*
+    - -target
+    - xtensa-esp32-elf
+

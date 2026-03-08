@@ -9,6 +9,7 @@ idf_component_register(
         config_mgr
         sensor_mgr
         calibration
+        alert_mgr
         wifi_mgr
         http_server
         nvs_flash

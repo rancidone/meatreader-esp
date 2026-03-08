@@ -68,6 +68,9 @@ sdkconfig
 sdkconfig.old
 managed_components/
 
+# direnv
+.direnv/
+
 ### Cpp
 # test output & cache
 Testing/
@@ -87,3 +90,8 @@ _deps
 CMakeUserPresets.json
 
 # End of https://www.toptal.com/developers/gitignore/api/svelte,visualstudiocode,linux,toit
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { configStore } from '../lib/stores/config.svelte.ts';
-  import type { ChannelConfig } from '../lib/api/types.ts';
+  import type { ChannelConfig, AlertConfig, AlertMethod } from '../lib/api/types.ts';
 
   // Load config on mount.
   $effect(() => { void configStore.fetch(); });
@@ -15,11 +15,25 @@
   let localEmaAlpha      = $state(0.3);
   let localSpikeReject   = $state(5.0);
   let localChannels      = $state<ChannelConfig[]>([]);
+  let localAlerts        = $state<AlertConfig[]>([]);
   let showPassword     = $state(false);
 
   // Deep-copy channels so mutations don't alias store objects.
   function cloneChannels(chs: ChannelConfig[]): ChannelConfig[] {
     return chs.map(ch => ({ ...ch, steinhart_hart: { ...ch.steinhart_hart } }));
+  }
+
+  function cloneAlerts(alerts: AlertConfig[] | undefined): AlertConfig[] {
+    if (!alerts || alerts.length === 0) {
+      // Default: two disabled alerts.
+      return [0, 1].map(() => ({
+        enabled: false,
+        target_temp_c: 100,
+        method: 'none' as AlertMethod,
+        webhook_url: '',
+      }));
+    }
+    return alerts.map(a => ({ ...a }));
   }
 
   $effect(() => {
@@ -31,6 +45,7 @@
     localEmaAlpha    = staged.ema_alpha;
     localSpikeReject = staged.spike_reject_delta_c;
     localChannels    = cloneChannels(staged.channels);
+    localAlerts      = cloneAlerts(staged.alerts);
   });
 
   // ── Derived flags ─────────────────────────────────────────────────────
@@ -57,6 +72,7 @@
       ema_alpha:            localEmaAlpha,
       spike_reject_delta_c: localSpikeReject,
       channels:             localChannels,
+      alerts:               localAlerts,
     });
   }
 
@@ -210,6 +226,12 @@
         <fieldset>
           <legend>Channel {ch.adc_channel}</legend>
           <div class="field-row">
+            <div class="field">
+              <label for="label{i}">Label</label>
+              <input id="label{i}" type="text" maxlength="31"
+                     bind:value={localChannels[i].label}
+                     placeholder="Channel {ch.adc_channel}" />
+            </div>
             <div class="field checkbox-field">
               <label>
                 <input type="checkbox" bind:checked={localChannels[i].enabled} />
@@ -238,6 +260,50 @@
               </div>
             </div>
           </details>
+        </fieldset>
+      {/each}
+
+      {#each localAlerts as _alert, i}
+        <fieldset>
+          <legend>Channel {i} — Alert</legend>
+          <div class="field-row">
+            <div class="field checkbox-field">
+              <label>
+                <input type="checkbox" bind:checked={localAlerts[i].enabled} />
+                Enable alert
+              </label>
+            </div>
+          </div>
+
+          {#if localAlerts[i].enabled}
+            <div class="field-row">
+              <div class="field">
+                <label for="alert-target-{i}">Target temperature (°C)</label>
+                <input id="alert-target-{i}" type="number" step="0.5" min="0" max="300"
+                       bind:value={localAlerts[i].target_temp_c} />
+              </div>
+              <div class="field">
+                <label for="alert-method-{i}">Alert method</label>
+                <select id="alert-method-{i}" bind:value={localAlerts[i].method}>
+                  <option value="none">None</option>
+                  <option value="webhook">Webhook (HTTP POST)</option>
+                  <option value="mqtt">MQTT</option>
+                </select>
+              </div>
+            </div>
+
+            {#if localAlerts[i].method === 'webhook'}
+              <div class="field-row">
+                <div class="field">
+                  <label for="alert-url-{i}">Webhook URL</label>
+                  <input id="alert-url-{i}" type="url"
+                         placeholder="http://192.168.1.x/notify"
+                         bind:value={localAlerts[i].webhook_url} />
+                  <span class="hint">Device will POST JSON to this URL when the alert fires.</span>
+                </div>
+              </div>
+            {/if}
+          {/if}
         </fieldset>
       {/each}
     </section>
@@ -492,5 +558,15 @@
 
   details[open] summary {
     margin-bottom: var(--gap-sm);
+  }
+
+  select {
+    background: var(--color-surface-alt);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    color: var(--color-text);
+    padding: 0.4rem 0.5rem;
+    font-size: 0.9rem;
+    width: 100%;
   }
 </style>
