@@ -12,7 +12,6 @@
   let localSsid          = $state('');
   let localPassword      = $state('');
   let localSampleRate    = $state(2.0);
-  let localPublishRate   = $state(1.0);
   let localEmaAlpha      = $state(0.3);
   let localSpikeReject   = $state(5.0);
   let localChannels      = $state<ChannelConfig[]>([]);
@@ -29,7 +28,6 @@
     localSsid        = staged.wifi_ssid;
     localPassword    = staged.wifi_password;
     localSampleRate  = staged.sample_rate_hz;
-    localPublishRate = staged.publish_rate_hz;
     localEmaAlpha    = staged.ema_alpha;
     localSpikeReject = staged.spike_reject_delta_c;
     localChannels    = cloneChannels(staged.channels);
@@ -56,7 +54,6 @@
       wifi_ssid:            localSsid,
       wifi_password:        localPassword,
       sample_rate_hz:       localSampleRate,
-      publish_rate_hz:      localPublishRate,
       ema_alpha:            localEmaAlpha,
       spike_reject_delta_c: localSpikeReject,
       channels:             localChannels,
@@ -191,11 +188,6 @@
             <input id="sr" type="number" step="0.5" min="0.1" max="10"
                    bind:value={localSampleRate} />
           </div>
-          <div class="field">
-            <label for="pr">Publish rate (Hz)</label>
-            <input id="pr" type="number" step="0.5" min="0.1" max="10"
-                   bind:value={localPublishRate} />
-          </div>
         </div>
         <div class="field-row">
           <div class="field">
@@ -274,11 +266,6 @@
               <td>Sample rate</td>
               <td>{p.sample_rate_hz} Hz</td>
               <td>{a.sample_rate_hz} Hz</td>
-            </tr>
-            <tr class:differs={p.publish_rate_hz !== a.publish_rate_hz}>
-              <td>Publish rate</td>
-              <td>{p.publish_rate_hz} Hz</td>
-              <td>{a.publish_rate_hz} Hz</td>
             </tr>
             <tr class:differs={p.ema_alpha !== a.ema_alpha}>
               <td>EMA α</td>
