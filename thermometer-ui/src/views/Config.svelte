@@ -263,6 +263,16 @@
         </fieldset>
       {/each}
 
+      <!-- ── Browser notifications ───────────────────────────────────── -->
+      {#if typeof Notification !== 'undefined' && Notification.permission !== 'granted'}
+        <div class="notif-prompt">
+          <span>Enable browser notifications to get alerted when temperatures are reached.</span>
+          <button type="button" onclick={() => void Notification.requestPermission()}>
+            Enable Notifications
+          </button>
+        </div>
+      {/if}
+
       {#each localAlerts as _alert, i}
         <fieldset>
           <legend>Channel {i} — Alert</legend>
@@ -568,5 +578,18 @@
     padding: 0.4rem 0.5rem;
     font-size: 0.9rem;
     width: 100%;
+  }
+
+  .notif-prompt {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-sm);
+    flex-wrap: wrap;
+    padding: var(--gap-sm) var(--gap);
+    background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface-alt));
+    border: 1px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
+    border-radius: var(--radius);
+    font-size: 0.875rem;
   }
 </style>
