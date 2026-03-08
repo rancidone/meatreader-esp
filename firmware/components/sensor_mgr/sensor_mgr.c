@@ -9,6 +9,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "freertos/event_groups.h"
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -32,6 +33,7 @@ struct sensor_mgr {
     sensor_snapshot_t  snapshot;
     bool               snapshot_valid;
     TaskHandle_t       task_handle;
+    EventGroupHandle_t snapshot_event_group;
     // Per-channel EMA state. NaN = uninitialized (seeds on first sample).
     float              ema[CONFIG_NUM_CHANNELS];
     // Per-channel consecutive error counter for hardware robustness.
@@ -158,6 +160,9 @@ static void sensor_task(void *pvParam)
         mgr->snapshot_valid = true;
         xSemaphoreGive(mgr->lock);
 
+        // Signal SSE clients that a new snapshot is available.
+        xEventGroupSetBits(mgr->snapshot_event_group, SENSOR_MGR_SNAPSHOT_BIT);
+
         // Pat the watchdog after a successful sampling cycle.
         esp_task_wdt_reset();
 
@@ -201,6 +206,12 @@ esp_err_t sensor_mgr_init(ads1115_handle_t ads, config_mgr_t *config,
         free(mgr);
         return ESP_ERR_NO_MEM;
     }
+    mgr->snapshot_event_group = xEventGroupCreate();
+    if (!mgr->snapshot_event_group) {
+        vSemaphoreDelete(mgr->lock);
+        free(mgr);
+        return ESP_ERR_NO_MEM;
+    }
 
     // Seed EMA to NaN so first sample initializes the filter directly.
     for (int i = 0; i < CONFIG_NUM_CHANNELS; i++) {
@@ -236,10 +247,16 @@ bool sensor_mgr_get_latest(sensor_mgr_t *mgr, sensor_snapshot_t *out_snap)
     return valid;
 }
 
+EventGroupHandle_t sensor_mgr_get_event_group(sensor_mgr_t *mgr)
+{
+    return mgr->snapshot_event_group;
+}
+
 void sensor_mgr_deinit(sensor_mgr_t *mgr)
 {
     if (!mgr) return;
-    if (mgr->task_handle) vTaskDelete(mgr->task_handle);
-    if (mgr->lock)        vSemaphoreDelete(mgr->lock);
+    if (mgr->task_handle)          vTaskDelete(mgr->task_handle);
+    if (mgr->lock)                 vSemaphoreDelete(mgr->lock);
+    if (mgr->snapshot_event_group) vEventGroupDelete(mgr->snapshot_event_group);
     free(mgr);
 }

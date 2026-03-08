@@ -12,6 +12,7 @@ export interface ChannelReading {
   // Present in /temps/latest (full map); absent in /temps/history (lean map).
   raw_adc?: number;
   resistance_ohms?: number;
+  alert_triggered?: boolean;
 }
 
 export interface Snapshot {
@@ -50,7 +51,17 @@ export interface SteinhartHartCoeffs {
 export interface ChannelConfig {
   enabled: boolean;
   adc_channel: number;
+  label?: string;
   steinhart_hart: SteinhartHartCoeffs;
+}
+
+export type AlertMethod = 'none' | 'webhook' | 'mqtt';
+
+export interface AlertConfig {
+  enabled: boolean;
+  target_temp_c: number;
+  method: AlertMethod;
+  webhook_url: string;
 }
 
 export interface DeviceConfig {
@@ -60,11 +71,13 @@ export interface DeviceConfig {
   ema_alpha: number;
   spike_reject_delta_c: number;
   channels: ChannelConfig[];
+  alerts?: AlertConfig[];
 }
 
 // Partial patch body for PATCH /config/staged.
-export type DeviceConfigPatch = Partial<Omit<DeviceConfig, 'channels'>> & {
+export type DeviceConfigPatch = Partial<Omit<DeviceConfig, 'channels' | 'alerts'>> & {
   channels?: ChannelConfig[];
+  alerts?: AlertConfig[];
 };
 
 export interface ConfigStatus {

@@ -6,6 +6,16 @@
 
 static const char *TAG = "route_config";
 
+// ── Alert method string helpers (shared with routes_alerts.c) ─────────────────
+
+static alert_method_t config_str_to_alert_method(const char *s)
+{
+    if (!s) return ALERT_METHOD_NONE;
+    if (strcmp(s, "webhook") == 0) return ALERT_METHOD_WEBHOOK;
+    if (strcmp(s, "mqtt")    == 0) return ALERT_METHOD_MQTT;
+    return ALERT_METHOD_NONE;
+}
+
 // ── JSON → device_config_t patch ─────────────────────────────────────────────
 //
 // Applies recognized fields from a JSON patch object to an existing
@@ -71,6 +81,12 @@ static void apply_json_patch(device_config_t *cfg, cJSON *patch)
                     cfg->channels[i].enabled = cJSON_IsTrue(enabled);
                 }
 
+                cJSON *label = cJSON_GetObjectItemCaseSensitive(ch, "label");
+                if (cJSON_IsString(label) && label->valuestring) {
+                    snprintf(cfg->channels[i].label, CONFIG_CHANNEL_LABEL_MAX,
+                             "%s", label->valuestring);
+                }
+
                 cJSON *sh = cJSON_GetObjectItemCaseSensitive(ch, "steinhart_hart");
                 if (cJSON_IsObject(sh)) {
                     cJSON *a = cJSON_GetObjectItemCaseSensitive(sh, "a");
@@ -88,6 +104,47 @@ static void apply_json_patch(device_config_t *cfg, cJSON *patch)
                             ESP_LOGW(TAG, "ch%d: invalid S-H coefficients in patch — ignoring", i);
                         }
                     }
+                }
+            }
+        }
+    }
+
+    // alerts: full replacement of the alerts array.
+    // Same pattern as channels: must have exactly CONFIG_NUM_CHANNELS entries.
+    item = cJSON_GetObjectItemCaseSensitive(patch, "alerts");
+    if (cJSON_IsArray(item)) {
+        int count = cJSON_GetArraySize(item);
+        if (count != CONFIG_NUM_CHANNELS) {
+            ESP_LOGW(TAG, "patch: alerts array must have exactly %d entries, got %d — ignoring",
+                     CONFIG_NUM_CHANNELS, count);
+        } else {
+            for (int i = 0; i < CONFIG_NUM_CHANNELS; i++) {
+                cJSON *entry = cJSON_GetArrayItem(item, i);
+                if (!cJSON_IsObject(entry)) continue;
+
+                cJSON *enabled = cJSON_GetObjectItemCaseSensitive(entry, "enabled");
+                if (cJSON_IsBool(enabled)) {
+                    cfg->alerts[i].enabled = cJSON_IsTrue(enabled);
+                }
+
+                cJSON *target = cJSON_GetObjectItemCaseSensitive(entry, "target_temp_c");
+                if (cJSON_IsNumber(target)) {
+                    float t = (float)target->valuedouble;
+                    if (t >= 0.0f && t <= 300.0f) {
+                        cfg->alerts[i].target_temp_c = t;
+                    }
+                }
+
+                cJSON *method = cJSON_GetObjectItemCaseSensitive(entry, "method");
+                if (cJSON_IsString(method)) {
+                    cfg->alerts[i].method = config_str_to_alert_method(method->valuestring);
+                }
+
+                cJSON *url = cJSON_GetObjectItemCaseSensitive(entry, "webhook_url");
+                if (cJSON_IsString(url)) {
+                    strncpy(cfg->alerts[i].webhook_url, url->valuestring,
+                            sizeof(cfg->alerts[i].webhook_url) - 1);
+                    cfg->alerts[i].webhook_url[sizeof(cfg->alerts[i].webhook_url) - 1] = '\0';
                 }
             }
         }
