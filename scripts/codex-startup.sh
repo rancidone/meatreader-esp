@@ -18,8 +18,11 @@ IDF_REPO_URL="https://github.com/espressif/esp-idf.git"
 : "${IDF_PATH:=$IDF_PATH_DEFAULT}"
 : "${IDF_VERSION:=$IDF_VERSION_DEFAULT}"
 : "${IDF_TARGET:=$IDF_TARGET_DEFAULT}"
+: "${PREFERRED_PYTHON:=python3.13}"
 : "${INSTALL_SYSTEM_PACKAGES:=0}"   # 1 to run apt-get install
 : "${INSTALL_UI_DEPS:=1}"            # 1 to run npm install
+
+PYTHON_SHIM_DIR=""
 
 log() {
   printf '\n[%s] %s\n' "$(date +'%Y-%m-%d %H:%M:%S')" "$*"
@@ -35,6 +38,37 @@ die() {
 }
 require_cmd() {
   command -v "$1" >/dev/null 2>&1 || die "missing required command: $1"
+}
+
+cleanup() {
+  if [[ -n "$PYTHON_SHIM_DIR" && -d "$PYTHON_SHIM_DIR" ]]; then
+    rm -rf "$PYTHON_SHIM_DIR"
+  fi
+}
+
+select_python() {
+  local -a candidates
+  local python_cmd=""
+  local python_path=""
+
+  candidates=("$PREFERRED_PYTHON" python3.14 python3.13 python3.12 python3.11 python3.10 python3.9 python3 python)
+
+  for python_cmd in "${candidates[@]}"; do
+    command -v "$python_cmd" >/dev/null 2>&1 || continue
+    if "$python_cmd" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 9) else 1)'; then
+      python_path="$(command -v "$python_cmd")"
+      break
+    fi
+  done
+
+  [[ -n "$python_path" ]] || die "Could not find a Python 3.9+ interpreter in PATH"
+
+  # Ensure ESP-IDF's detect_python.sh sees this interpreter first when checking "python3".
+  PYTHON_SHIM_DIR="$(mktemp -d)"
+  ln -sf "$python_path" "$PYTHON_SHIM_DIR/python3"
+  export PATH="$PYTHON_SHIM_DIR:$PATH"
+
+  log "Selected Python for ESP-IDF: $("$python_path" --version 2>&1) ($python_path)"
 }
 
 validate_inputs() {
@@ -99,6 +133,7 @@ install_esp_idf() {
   [[ -x "$IDF_PATH/install.sh" ]] || die "missing installer: $IDF_PATH/install.sh"
 
   log "Running ESP-IDF tool installer for target: $IDF_TARGET"
+  unset IDF_PYTHON_ENV_PATH
   "$IDF_PATH/install.sh" "$IDF_TARGET"
 }
 
@@ -111,6 +146,7 @@ validate_idf_py() {
   log "Validating idf.py availability (tolerating optional tool issues)"
   export_log="$(mktemp)"
 
+  unset IDF_PYTHON_ENV_PATH
   set +e
   # shellcheck disable=SC1090
   source "$IDF_PATH/export.sh" >"$export_log" 2>&1
@@ -188,8 +224,10 @@ MSG
 }
 
 main() {
+  trap cleanup EXIT
   log "Starting Codex Cloud bootstrap for meatreader-esp"
   validate_inputs
+  select_python
   install_apt_packages
   install_esp_idf
   validate_idf_py
