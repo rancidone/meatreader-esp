@@ -47,17 +47,17 @@ Generated from planning session 2026-03-08.
 
 ### Cook timer (pure UI)
 
-- [ ] Add `cookStartTime: Record<number, number | null>` to a new `cookStore.svelte.ts`
-- [ ] Show "Start cook" button on `ChannelCard` when channel has a valid reading
-- [ ] Display elapsed time HH:MM:SS as `$derived` from `Date.now()` via `setInterval`
+- [x] Add `cookStartTime: Record<number, number | null>` to a new `cookStore.svelte.ts`
+- [x] Show "Start cook" button on `ChannelCard` when channel has a valid reading
+- [x] Display elapsed time HH:MM:SS as `$derived` from `Date.now()` via `setInterval`
 
 ### Predicted done time (pure UI)
 
-- [ ] Create `src/lib/stores/predictions.svelte.ts`:
+- [x] Create `src/lib/stores/predictions.svelte.ts`:
   - `$derived` from `tempsStore.history` + alert target temps
   - Per-channel: least-squares linear regression on last 20 `(timestamp_s, temperature_c)` pairs
   - Return `{ channel: number, eta_ms: number | null }[]`; null if slope ≤ 0.01°C/s or < 10 data points or no target set
-- [ ] Display "Done in ~HH:MM" on `ChannelCard` when `eta_ms` is not null and within 24 hours
+- [x] Display "Done in ~HH:MM" on `ChannelCard` when `eta_ms` is not null and within 24 hours
 
 ---
 
