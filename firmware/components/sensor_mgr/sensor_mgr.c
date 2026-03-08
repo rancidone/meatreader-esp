@@ -25,6 +25,8 @@ static const char *TAG = "sensor_mgr";
 
 // Number of consecutive errors before a channel is skipped for one tick.
 #define CONSEC_ERROR_SKIP_THRESHOLD  5
+// Repeated warning logs are emitted on first occurrence, then every Nth repeat.
+#define WARN_REPEAT_EVERY            30
 // ADC stabilization: discard one conversion after each mux switch, then
 // average a small number of samples to reduce quantization and pickup noise.
 #define ADS_SETTLE_DISCARD_SAMPLES   1
@@ -46,7 +48,30 @@ struct sensor_mgr {
     float              ema[CONFIG_NUM_CHANNELS];
     // Per-channel consecutive error counter for hardware robustness.
     uint8_t            consecutive_errors[CONFIG_NUM_CHANNELS];
+    // Per-channel warning repeat counters to prevent log spam.
+    uint16_t           warn_repeat_counts[CONFIG_NUM_CHANNELS][5];
 };
+
+typedef enum {
+    SENSOR_WARN_READ_FAIL = 0,
+    SENSOR_WARN_OPEN_RAW,
+    SENSOR_WARN_OPEN_OHMS,
+    SENSOR_WARN_TEMP_NAN,
+    SENSOR_WARN_SKIP,
+} sensor_warn_t;
+
+static uint16_t bump_warn_count(struct sensor_mgr *mgr, int idx, sensor_warn_t warn)
+{
+    if (mgr->warn_repeat_counts[idx][warn] < UINT16_MAX) {
+        mgr->warn_repeat_counts[idx][warn]++;
+    }
+    return mgr->warn_repeat_counts[idx][warn];
+}
+
+static bool should_emit_warn(uint16_t count)
+{
+    return count == 1 || (count % WARN_REPEAT_EVERY) == 0;
+}
 
 // ── Sampling ──────────────────────────────────────────────────────────────────
 
@@ -100,11 +125,19 @@ static channel_reading_t sample_channel(struct sensor_mgr *mgr, int idx,
     int16_t raw = 0;
     esp_err_t err = read_channel_smoothed(mgr, ch_cfg->adc_channel, &raw);
     if (err != ESP_OK) {
-        ESP_LOGW(TAG, "ch%d: ADS1115 read failed: %s", idx, esp_err_to_name(err));
+        uint16_t count = bump_warn_count(mgr, idx, SENSOR_WARN_READ_FAIL);
+        if (should_emit_warn(count)) {
+            ESP_LOGW(TAG, "ch%d: ADS1115 read failed: %s%s", idx, esp_err_to_name(err),
+                     count > 1 ? " (repeating)" : "");
+        }
         return r;
     }
     if (raw >= OPEN_CIRCUIT_RAW_THRESHOLD) {
-        ESP_LOGW(TAG, "ch%d: likely open circuit (raw=%d)", idx, raw);
+        uint16_t count = bump_warn_count(mgr, idx, SENSOR_WARN_OPEN_RAW);
+        if (should_emit_warn(count)) {
+            ESP_LOGW(TAG, "ch%d: likely open circuit (raw=%d)%s", idx, raw,
+                     count > 1 ? " (repeating)" : "");
+        }
         return r;
     }
 
@@ -116,8 +149,11 @@ static channel_reading_t sample_channel(struct sensor_mgr *mgr, int idx,
     );
 
     if (r.resistance_ohms >= OPEN_CIRCUIT_RES_OHMS) {
-        ESP_LOGW(TAG, "ch%d: likely open circuit (%.0f ohms)",
-                 idx, r.resistance_ohms);
+        uint16_t count = bump_warn_count(mgr, idx, SENSOR_WARN_OPEN_OHMS);
+        if (should_emit_warn(count)) {
+            ESP_LOGW(TAG, "ch%d: likely open circuit (%.0f ohms)%s",
+                     idx, r.resistance_ohms, count > 1 ? " (repeating)" : "");
+        }
         return r;
     }
 
@@ -125,7 +161,11 @@ static channel_reading_t sample_channel(struct sensor_mgr *mgr, int idx,
 
     // NaN propagation check (e.g. negative resistance fed to log)
     if (isnanf(raw_temp) || isinff(raw_temp)) {
-        ESP_LOGW(TAG, "ch%d: temperature computation produced NaN/Inf", idx);
+        uint16_t count = bump_warn_count(mgr, idx, SENSOR_WARN_TEMP_NAN);
+        if (should_emit_warn(count)) {
+            ESP_LOGW(TAG, "ch%d: temperature computation produced NaN/Inf%s", idx,
+                     count > 1 ? " (repeating)" : "");
+        }
         return r;
     }
 
@@ -168,8 +208,11 @@ static void sensor_task(void *pvParam)
         for (int i = 0; i < CONFIG_NUM_CHANNELS; i++) {
             // Skip channel for this tick if it has exceeded the error threshold.
             if (mgr->consecutive_errors[i] > CONSEC_ERROR_SKIP_THRESHOLD) {
-                ESP_LOGW(TAG, "ch%d: skipping (consecutive_errors=%u)", i,
-                         mgr->consecutive_errors[i]);
+                uint16_t count = bump_warn_count(mgr, i, SENSOR_WARN_SKIP);
+                if (should_emit_warn(count)) {
+                    ESP_LOGW(TAG, "ch%d: skipping (consecutive_errors=%u)%s", i,
+                             mgr->consecutive_errors[i], count > 1 ? " (repeating)" : "");
+                }
                 // Preserve the last snapshot reading so callers still see stale data.
                 xSemaphoreTake(mgr->lock, portMAX_DELAY);
                 snap.channels[i] = mgr->snapshot.channels[i];
@@ -188,6 +231,7 @@ static void sensor_task(void *pvParam)
                 }
             } else {
                 mgr->consecutive_errors[i] = 0;
+                memset(mgr->warn_repeat_counts[i], 0, sizeof(mgr->warn_repeat_counts[i]));
             }
         }
 
