@@ -35,8 +35,8 @@ Generated from planning session 2026-03-08.
 
 ### Remove raw technical fields from dashboard
 
-- [ ] Remove `<dl class="meta">` block (raw ADC, resistance) from `ChannelCard.svelte`
-- [ ] Add "Raw readings" table to `Diagnostics.svelte`: poll `/temps/latest`, show `raw_adc`, `resistance_ohms`, `quality` per channel
+- [x] Remove `<dl class="meta">` block (raw ADC, resistance) from `ChannelCard.svelte`
+- [x] Add "Raw readings" table to `Diagnostics.svelte`: poll `/temps/latest`, show `raw_adc`, `resistance_ohms`, `quality` per channel
 
 ### Channel labels
 
