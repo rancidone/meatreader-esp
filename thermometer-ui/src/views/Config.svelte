@@ -226,6 +226,12 @@
         <fieldset>
           <legend>Channel {ch.adc_channel}</legend>
           <div class="field-row">
+            <div class="field">
+              <label for="label{i}">Label</label>
+              <input id="label{i}" type="text" maxlength="31"
+                     bind:value={localChannels[i].label}
+                     placeholder="Channel {ch.adc_channel}" />
+            </div>
             <div class="field checkbox-field">
               <label>
                 <input type="checkbox" bind:checked={localChannels[i].enabled} />

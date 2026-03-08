@@ -51,6 +51,7 @@ export interface SteinhartHartCoeffs {
 export interface ChannelConfig {
   enabled: boolean;
   adc_channel: number;
+  label?: string;
   steinhart_hart: SteinhartHartCoeffs;
 }
 

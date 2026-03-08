@@ -1,6 +1,7 @@
 <script lang="ts">
   import { tempsStore }  from '../lib/stores/temps.svelte.ts';
   import { deviceStore } from '../lib/stores/device.svelte.ts';
+  import { configStore } from '../lib/stores/config.svelte.ts';
   import { ui }          from '../lib/stores/ui.svelte.ts';
   import { formatAge }   from '../lib/utils/format.ts';
   import ChannelCard     from '../lib/components/dashboard/ChannelCard.svelte';
@@ -24,6 +25,8 @@
       deviceStore.stop();
     }
   });
+
+  $effect(() => { void configStore.fetch(); });
 
   // Per-channel readings from the latest snapshot; null when no data yet.
   const readings = $derived(
@@ -79,6 +82,7 @@
         snapshots={tempsStore.history}
         unit={ui.unit}
         color={COLORS[idx]}
+        label={configStore.status?.active.channels[idx]?.label}
         onclick={() => chartOpen = true}
       />
     {/each}
