@@ -29,6 +29,8 @@ export interface StatusResponse {
   health_flags: string[];
   uptime_ms: number;
   firmware: string;
+  wifi_rssi_dbm?: number;
+  wifi_provisioned?: boolean;
 }
 
 export interface DeviceResponse {

@@ -4,19 +4,19 @@ Generated from planning session 2026-03-08.
 
 ---
 
-## Phase 1: Cleanup
+## Phase 1: Cleanup ✅
 
-- [ ] **CLAUDE.md**: Remove `toit-src/` from repository layout table (dir doesn't exist)
-- [ ] **CLAUDE.md**: Remove/correct "EMA alpha hardcoded" bullet — `sensor_mgr.c` already reads `cfg.ema_alpha` correctly
-- [ ] **`types.ts`**: Remove file-header comment pointing to `*.toit` source files; replace with pointer to `http_util.h`
-- [ ] **`types.ts`**: Remove `divider_resistor_ohms` from `ChannelConfig` (firmware never emits this)
-- [ ] **`types.ts`**: Remove `publish_rate_hz` from `DeviceConfig` (no such field in `device_config_t`)
-- [ ] **`types.ts`**: Remove `HistoryResponse` entirely (endpoint intentionally absent, type unused)
-- [ ] **`Config.svelte`**: Remove `localPublishRate` state, the "Publish rate" form field, its `saveToStaged()` inclusion, and comparison table row
-- [ ] **`client.ts`**: Remove `temps.history` export (calls non-existent endpoint); remove `HistoryResponse` re-export
-- [ ] **`live.ts`**: Remove any `HistoryResponse` references
-- [ ] **`therm_math.c`**: Replace "Coefficients from Toit prototype" comment with neutral description
-- [ ] **`board.h`**: Remove unused `BOARD_NUM_CHANNELS` (redundant with `CONFIG_NUM_CHANNELS` in `config_mgr.h`)
+- [x] **CLAUDE.md**: Remove `toit-src/` from repository layout table (dir doesn't exist)
+- [x] **CLAUDE.md**: Remove/correct "EMA alpha hardcoded" bullet — `sensor_mgr.c` already reads `cfg.ema_alpha` correctly
+- [x] **`types.ts`**: Remove file-header comment pointing to `*.toit` source files; replace with pointer to `http_util.h`
+- [x] **`types.ts`**: Remove `divider_resistor_ohms` from `ChannelConfig` (firmware never emits this)
+- [x] **`types.ts`**: Remove `publish_rate_hz` from `DeviceConfig` (no such field in `device_config_t`)
+- [x] **`types.ts`**: Remove `HistoryResponse` entirely (endpoint intentionally absent, type unused)
+- [x] **`Config.svelte`**: Remove `localPublishRate` state, the "Publish rate" form field, its `saveToStaged()` inclusion, and comparison table row
+- [x] **`client.ts`**: Remove `temps.history` export (calls non-existent endpoint); remove `HistoryResponse` re-export
+- [x] **`live.ts`**: Remove any `HistoryResponse` references
+- [x] **`therm_math.c`**: Replace "Coefficients from Toit prototype" comment with neutral description
+- [x] **`board.h`**: Remove unused `BOARD_NUM_CHANNELS` (redundant with `CONFIG_NUM_CHANNELS` in `config_mgr.h`)
 
 ---
 
@@ -54,26 +54,26 @@ Generated from planning session 2026-03-08.
 
 ---
 
-## Phase 3: Unit Tests
+## Phase 3: Unit Tests ✅
 
 ### Firmware — host-side therm_math (CTest, no ESP-IDF required)
 
-- [ ] Create `firmware/tests/CMakeLists.txt` — top-level CTest project
-- [ ] Create `firmware/tests/therm_math/CMakeLists.txt` — builds `therm_math_test` executable linking `therm_math.c` + libm
-- [ ] Create `firmware/tests/therm_math/test_therm_math.c` with cases:
+- [x] Create `firmware/tests/CMakeLists.txt` — top-level CTest project
+- [x] Create `firmware/tests/therm_math/CMakeLists.txt` — builds `therm_math_test` executable linking `therm_math.c` + libm
+- [x] Create `firmware/tests/therm_math/test_therm_math.c` with cases:
   - `therm_math_adc_to_resistance`: known ADC → expected resistance; open-circuit sentinel; negative resistance sentinel
   - `therm_math_resistance_to_celsius`: known resistance → expected °C using `THERM_MATH_DEFAULT_COEFFS`
   - `therm_math_ema_update`: NaN seed returns first value; convergence; alpha=1.0 identity
   - `therm_math_sh_valid`: rejects zero/negative coefficients
-- [ ] Add "## Testing" section to CLAUDE.md: `cd firmware/tests && cmake -B build && cmake --build build && ctest --test-dir build`
+- [x] Add "## Testing" section to CLAUDE.md: `cd firmware/tests && cmake -B build && cmake --build build && ctest --test-dir build`
 
 ### Web UI — Vitest
 
-- [ ] Add dev dependencies: `vitest`, `@vitest/ui`, `jsdom`, `@testing-library/svelte`, `@testing-library/jest-dom`
-- [ ] Add `test` block to `vite.config.ts`: `environment: 'jsdom'`, `globals: true`, `include: ['src/**/*.test.ts']`
-- [ ] Add `"test": "vitest"` and `"test:ui": "vitest --ui"` to `package.json` scripts
-- [ ] Create `src/lib/utils/format.test.ts`: test `formatTemp`, `toDisplayTemp`, `formatResistance`, `formatUptime`, `formatAge`
-- [ ] Create `src/lib/api/types.test.ts`: verify `ApiError` is throwable and `instanceof` works
+- [x] Add dev dependencies: `vitest`, `@vitest/ui`, `jsdom`, `@testing-library/svelte`, `@testing-library/jest-dom`
+- [x] Add `test` block to `vite.config.ts`: `environment: 'jsdom'`, `globals: true`, `include: ['src/**/*.test.ts']`
+- [x] Add `"test": "vitest"` and `"test:ui": "vitest --ui"` to `package.json` scripts
+- [x] Create `src/lib/utils/format.test.ts`: test `formatTemp`, `toDisplayTemp`, `formatResistance`, `formatUptime`, `formatAge`
+- [x] Create `src/lib/api/types.test.ts`: verify `ApiError` is throwable and `instanceof` works
 
 ---
 
@@ -134,26 +134,26 @@ Generated from planning session 2026-03-08.
 
 ---
 
-## Phase 6: Prometheus Telemetry
+## Phase 6: Prometheus Telemetry ✅
 
-- [ ] Create `firmware/components/http_server/routes_metrics.c`:
+- [x] Create `firmware/components/http_server/routes_metrics.c`:
   - `GET /metrics` handler
   - Build Prometheus text format with `snprintf` into `char buf[2048]`
   - Metrics: `meatreader_temperature_celsius{channel,label}`, `meatreader_resistance_ohms{channel}`, `meatreader_adc_raw{channel}`, `meatreader_wifi_rssi_dbm`, `meatreader_uptime_seconds`, `meatreader_channel_quality{channel}`
   - `Content-Type: text/plain; version=0.0.4; charset=utf-8`
   - RSSI via `esp_wifi_sta_get_ap_info`; uptime via `esp_timer_get_time`
-- [ ] Register `/metrics` in `s_uris[]` in `http_server.c`
-- [ ] Add `/metrics` to Vite proxy targets in `vite.config.ts`
-- [ ] Add "## Observability" section to CLAUDE.md with Prometheus `scrape_configs` snippet
+- [x] Register `/metrics` in `s_uris[]` in `http_server.c`
+- [x] Add `/metrics` to Vite proxy targets in `vite.config.ts`
+- [x] Add "## Observability" section to CLAUDE.md with Prometheus `scrape_configs` snippet
 
 ---
 
-## Phase 7: Hardware Interface Robustness
+## Phase 7: Hardware Interface Robustness ✅
 
-- [ ] **`sensor_mgr.c`**: Add bounds check in `sample_channel` — return early if `ch_cfg->adc_channel > 3`
-- [ ] **`sensor_mgr.c`**: Add `uint8_t consecutive_errors[CONFIG_NUM_CHANNELS]`; increment on I2C error, reset on success; skip channel for N ticks if `consecutive_errors[idx] > 5`
-- [ ] **`sensor_mgr.c`**: Register sensor task with task watchdog (`esp_task_wdt_add`); call `esp_task_wdt_reset` each successful cycle
-- [ ] **`routes_status.c`**: Add `wifi_rssi_dbm` to `/status` JSON response (0 if not connected)
+- [x] **`sensor_mgr.c`**: Add bounds check in `sample_channel` — return early if `ch_cfg->adc_channel > 3`
+- [x] **`sensor_mgr.c`**: Add `uint8_t consecutive_errors[CONFIG_NUM_CHANNELS]`; increment on I2C error, reset on success; skip channel for N ticks if `consecutive_errors[idx] > 5`
+- [x] **`sensor_mgr.c`**: Register sensor task with task watchdog (`esp_task_wdt_add`); call `esp_task_wdt_reset` each successful cycle
+- [x] **`routes_status.c`**: Add `wifi_rssi_dbm` to `/status` JSON response (0 if not connected)
 
 ---
 
