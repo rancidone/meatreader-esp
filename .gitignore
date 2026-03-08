@@ -68,6 +68,9 @@ sdkconfig
 sdkconfig.old
 managed_components/
 
+# direnv
+.direnv/
+
 ### Cpp
 # test output & cache
 Testing/
