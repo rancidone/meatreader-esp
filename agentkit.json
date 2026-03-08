@@ -1,0 +1,60 @@
+{
+  "todo": {
+    "path": "TODO.md",
+    "task_id_strategy": "phase-line",
+    "status_markers": {
+      "open": "- [ ]",
+      "done": "- [x]"
+    }
+  },
+  "index": {
+    "exclude_paths": [
+      ".claude/worktrees",
+      "firmware/build",
+      "thermometer-ui/node_modules"
+    ]
+  },
+  "context": {
+    "default_token_budget": 2800,
+    "max_files_per_pack": 12,
+    "max_tests_per_pack": 5
+  },
+  "test_hints": {
+    "firmware": "cd firmware/tests && cmake -B build && cmake --build build && ctest --test-dir build",
+    "ui": "cd thermometer-ui && npm run test"
+  },
+  "governance": {
+    "mode": "allowlist-soft-warn",
+    "worker_allowlist_profile": "lean-code-edit-v1",
+    "worker_allowed_tools": [
+      "Read",
+      "Grep",
+      "Edit",
+      "Write",
+      "Bash"
+    ],
+    "planner_only_ops": [
+      "broad_recursive_scan",
+      "unbounded_shell_output",
+      "web_search"
+    ],
+    "bash_allow_prefixes": [
+      "git status",
+      "git diff",
+      "git add",
+      "git commit",
+      "npm run test",
+      "cmake",
+      "ctest"
+    ],
+    "soft_warning_thresholds": {
+      "max_output_lines": 240,
+      "max_read_kb": 160,
+      "warn_avg_tokens_per_tool_call": 3500
+    }
+  },
+  "telemetry": {
+    "events_path": ".claude/agent-events.jsonl",
+    "weekly_summary_path": ".claude/telemetry-weekly.md"
+  }
+}
