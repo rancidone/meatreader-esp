@@ -1,0 +1,22 @@
+CompileFlags:
+  # compile_commands.json lives in build/ — point clangd at it.
+  CompilationDatabase: build/
+
+  # Strip Xtensa / ESP-IDF-specific GCC flags that host clang doesn't understand.
+  # These cause "unknown argument" spam and the machine/endian.h false positive.
+  Remove:
+    - -mlongcalls
+    - -mtext-section-literals
+    - -mfix-esp32-psram-cache-issue
+    - -mfix-esp32-psram-cache-strategy*
+    - -fno-shrink-wrap
+    - -fstrict-volatile-bitfields
+    - -fno-tree-switch-conversion
+    - -fno-rtti
+    - -fno-exceptions
+    - --specs=*
+    - --sysroot=*
+    - -march=xtensa*
+    - -target
+    - xtensa-esp32-elf
+
