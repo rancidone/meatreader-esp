@@ -67,7 +67,10 @@ esp_err_t handle_events(httpd_req_t *req)
             continue;
         }
 
-        cJSON *obj = snapshot_to_json(&snap);
+        device_config_t active;
+        config_mgr_get_active(ctx->config, &active);
+
+        cJSON *obj = snapshot_to_json(&snap, active.alerts);
         char  *json_str = cJSON_PrintUnformatted(obj);
         cJSON_Delete(obj);
 
