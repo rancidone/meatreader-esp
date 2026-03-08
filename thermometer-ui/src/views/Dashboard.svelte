@@ -3,6 +3,7 @@
   import { deviceStore } from '../lib/stores/device.svelte.ts';
   import { configStore } from '../lib/stores/config.svelte.ts';
   import { ui }          from '../lib/stores/ui.svelte.ts';
+  import { predictions } from '../lib/stores/predictions.svelte.ts';
   import { formatAge }   from '../lib/utils/format.ts';
   import ChannelCard     from '../lib/components/dashboard/ChannelCard.svelte';
   import ChartModal      from '../lib/components/dashboard/ChartModal.svelte';
@@ -83,6 +84,7 @@
         unit={ui.unit}
         color={COLORS[idx]}
         label={configStore.status?.active.channels[idx]?.label}
+        prediction={predictions.forChannel(idx)}
         onclick={() => chartOpen = true}
       />
     {/each}
