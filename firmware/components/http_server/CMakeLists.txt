@@ -7,6 +7,7 @@ idf_component_register(
         "routes_status.c"
         "routes_metrics.c"
         "routes_provision.c"
+        "routes_events.c"
     INCLUDE_DIRS "include"
     REQUIRES
         esp_http_server

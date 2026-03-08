@@ -5,6 +5,12 @@
 #include "esp_err.h"
 #include "ads1115.h"
 #include "config_mgr.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
+
+// Event group bit set after each snapshot update.
+// Consumers (e.g. SSE handler) wait on this bit to detect new data.
+#define SENSOR_MGR_SNAPSHOT_BIT  (1 << 0)
 
 typedef enum {
     SENSOR_QUALITY_OK       = 0,
@@ -37,5 +43,9 @@ esp_err_t sensor_mgr_start(sensor_mgr_t *mgr);
 // Copy the latest snapshot. Returns false if no data is available yet
 // (task has not completed a first sample).
 bool sensor_mgr_get_latest(sensor_mgr_t *mgr, sensor_snapshot_t *out_snap);
+
+// Return the FreeRTOS event group used to signal snapshot updates.
+// Bit 0 (SENSOR_MGR_SNAPSHOT_BIT) is set after each snapshot write.
+EventGroupHandle_t sensor_mgr_get_event_group(sensor_mgr_t *mgr);
 
 void sensor_mgr_deinit(sensor_mgr_t *mgr);
