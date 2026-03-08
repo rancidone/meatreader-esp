@@ -11,7 +11,6 @@ import {
   type DeviceConfig,
   type DeviceConfigPatch,
   type DeviceResponse,
-  type HistoryResponse,
   type Snapshot,
   type SteinhartHartCoeffs,
   type StatusResponse,
@@ -47,9 +46,6 @@ const patch = <T>(path: string, body: unknown) =>
 export const temps = {
   latest: () =>
     get<Snapshot>('/temps/latest'),
-
-  history: (seconds = 60) =>
-    get<HistoryResponse>(`/temps/history?seconds=${seconds}`),
 };
 
 // ── Status / Device ──────────────────────────────────────────────────────────
@@ -105,7 +101,7 @@ export const calibration = {
 export const api = { temps, status, device, config, calibration };
 
 // Re-export types so consumers can import from one place.
-export type { Snapshot, ChannelReading, HistoryResponse, StatusResponse, DeviceResponse,
+export type { Snapshot, ChannelReading, StatusResponse, DeviceResponse,
               DeviceConfig, ChannelConfig, DeviceConfigPatch, ConfigStatus,
               SteinhartHartCoeffs, CalibrationLiveResponse, CalibrationSession,
               CalibrationPoint } from './types.ts';
