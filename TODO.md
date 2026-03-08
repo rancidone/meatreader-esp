@@ -20,37 +20,37 @@ Generated from planning session 2026-03-08.
 
 ---
 
-## Phase 2: WiFi Bootstrap (SoftAP + Captive Portal)
+## Phase 2: WiFi Bootstrap (SoftAP + Captive Portal) ✅
 
 **Chosen approach:** SoftAP + Captive Portal. On first boot (or failed STA connection), the ESP32 starts as an access point ("Meatreader-Setup"). Any phone or laptop connects, the browser is redirected to a minimal config page, the user enters their SSID and password, and the device saves credentials to NVS and reboots into STA mode. No companion app, no cloud, works on every platform.
 
 ### Firmware
 
-- [ ] Extend `wifi_mgr` to support a dual-mode boot sequence:
+- [x] Extend `wifi_mgr` to support a dual-mode boot sequence:
   - On init: read credentials from NVS (`wifi_mgr_has_credentials()`)
   - If no credentials: start SoftAP mode directly
   - If credentials present: attempt STA connection with existing timeout; on timeout/failure, fall back to SoftAP
-- [ ] Add `wifi_mgr_start_softap(const char *ap_ssid)` — starts `WIFI_MODE_AP` with open auth (no password), SSID `"Meatreader-Setup"`
-- [ ] Add `wifi_mgr_start_sta_and_reboot()` — saves new credentials to NVS, switches to STA, reboots on success; returns error on connect failure so captive portal can show a retry message
-- [ ] SoftAP serves a DHCP range; DNS server needed for captive portal redirect — add `lwip` DNS hijack or use `esp_netif` DNS intercept to redirect all DNS queries to `192.168.4.1` (the AP gateway)
-- [ ] In `main.c`: if `wifi_mgr_in_softap_mode()`, start HTTP server in provisioning mode (captive portal only, no sensor routes); otherwise start full server as normal
+- [x] Add `wifi_mgr_start_softap(const char *ap_ssid)` — starts `WIFI_MODE_AP` with open auth (no password), SSID `"Meatreader-Setup"`
+- [x] Add `wifi_mgr_start_sta_and_reboot()` — saves new credentials to NVS, switches to STA, reboots on success; returns error on connect failure so captive portal can show a retry message
+- [x] SoftAP serves a DHCP range; DNS server needed for captive portal redirect — add `lwip` DNS hijack or use `esp_netif` DNS intercept to redirect all DNS queries to `192.168.4.1` (the AP gateway)
+- [x] In `main.c`: if `wifi_mgr_in_softap_mode()`, start HTTP server in provisioning mode (captive portal only, no sensor routes); otherwise start full server as normal
 
 ### Captive portal HTTP handler
 
-- [ ] Add `routes_provision.c` to `http_server`:
+- [x] Add `routes_provision.c` to `http_server`:
   - `GET /` in SoftAP mode: serve a self-contained inline HTML page (no external assets, ~2KB) with:
     - SSID text input + password input (type="password") + Submit
     - Optional: `GET /provision/scan` returns nearby SSIDs as JSON for a dropdown (uses `esp_wifi_scan_start`)
   - `POST /provision/connect`: receives `{"ssid":"...","password":"..."}`, attempts `wifi_mgr_start_sta_and_reboot()`; returns `{"status":"connecting"}` on attempt or `{"error":"..."}` on validation failure
   - `GET /provision/status`: returns `{"connected":true/false,"ip":"..."}` — polled by the page JS while connecting
-- [ ] `GET /generate_204` (Android), `GET /hotspot-detect.html` (iOS/macOS), `GET /ncsi.txt` (Windows): return `302 → http://192.168.4.1/` to trigger the captive portal popup on each OS
-- [ ] The inline HTML page must be stored as a C string literal (`const char provision_html[]`) in `routes_provision.c` — no SPIFFS/LittleFS needed
+- [x] `GET /generate_204` (Android), `GET /hotspot-detect.html` (iOS/macOS), `GET /ncsi.txt` (Windows): return `302 → http://192.168.4.1/` to trigger the captive portal popup on each OS
+- [x] The inline HTML page must be stored as a C string literal (`const char provision_html[]`) in `routes_provision.c` — no SPIFFS/LittleFS needed
 
 ### UI (normal mode — post-provisioning)
 
-- [ ] Add a "WiFi" section to `Config.svelte` for credential rotation (change SSID/password after initial setup) — calls existing `PATCH /config/staged` + `POST /config/apply` + reboot
-- [ ] Show a warning: "Saving new WiFi credentials will restart the device"
-- [ ] Add `wifi_provisioned: boolean` to `/status` response so the UI can detect unconfigured state
+- [x] Add a "WiFi" section to `Config.svelte` for credential rotation (change SSID/password after initial setup) — calls existing `PATCH /config/staged` + `POST /config/apply` + reboot
+- [x] Show a warning: "Saving new WiFi credentials will restart the device"
+- [x] Add `wifi_provisioned: boolean` to `/status` response so the UI can detect unconfigured state
 
 ---
 
