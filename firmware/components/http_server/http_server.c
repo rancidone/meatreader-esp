@@ -32,6 +32,8 @@ esp_err_t handle_events(httpd_req_t *req);
 esp_err_t handle_profiles_get(httpd_req_t *req);
 esp_err_t handle_profiles_put(httpd_req_t *req);
 esp_err_t handle_profiles_delete(httpd_req_t *req);
+esp_err_t handle_push_subscription(httpd_req_t *req);
+esp_err_t handle_push_notify(httpd_req_t *req);
 
 // Forward declarations — provisioning routes (routes_provision.c)
 esp_err_t handle_provision_root(httpd_req_t *req);
@@ -71,6 +73,9 @@ static const httpd_uri_t s_normal_uris[] = {
     { .uri = "/profiles",                  .method = HTTP_GET,    .handler = handle_profiles_get     },
     { .uri = "/profiles/*",                .method = HTTP_PUT,    .handler = handle_profiles_put     },
     { .uri = "/profiles/*",                .method = HTTP_DELETE, .handler = handle_profiles_delete  },
+    // Web Push relay
+    { .uri = "/push/subscription",         .method = HTTP_POST,   .handler = handle_push_subscription },
+    { .uri = "/push/notify",               .method = HTTP_POST,   .handler = handle_push_notify       },
 };
 
 #define NUM_NORMAL_URIS  (sizeof(s_normal_uris) / sizeof(s_normal_uris[0]))

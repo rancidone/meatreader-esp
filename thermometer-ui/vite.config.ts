@@ -48,6 +48,7 @@ export default defineConfig({
       '/metrics':     { target: 'http://192.168.10.121', changeOrigin: true },
       '/events':      { target: 'http://192.168.10.121', changeOrigin: true },
       '/profiles':    { target: 'http://192.168.10.121', changeOrigin: true },
+      '/push':        { target: 'http://192.168.10.121', changeOrigin: true },
     },
   },
 });
