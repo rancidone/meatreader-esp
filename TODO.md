@@ -6,32 +6,32 @@
 
 ### Cook profiles (firmware)
 
-- [ ] Add `cook_profile_t` struct to `config_mgr.h`: `name[32]`, `num_stages`, `stage_t stages[4]` (each stage: `target_temp_c`, `alert_method`, `label[32]`)
-- [ ] Add `cook_profiles_t profiles[8]` to `device_config_t` (NVS blob; bump `schema_version`)
-- [ ] Create `GET /profiles`, `PUT /profiles/{id}`, `DELETE /profiles/{id}` routes in new `routes_profiles.c`
-- [ ] Register routes in `http_server.c`
+- [x] Add `cook_profile_t` struct to `config_mgr.h`: `name[32]`, `num_stages`, `stage_t stages[4]` (each stage: `target_temp_c`, `alert_method`, `label[32]`)
+- [x] Add `cook_profiles_t profiles[8]` to `device_config_t` (NVS blob; bump `schema_version`)
+- [x] Create `GET /profiles`, `PUT /profiles/{id}`, `DELETE /profiles/{id}` routes in new `routes_profiles.c`
+- [x] Register routes in `http_server.c`
 
 ### Stall detection (firmware)
 
-- [ ] Add stall detection to `alert_mgr`: track per-channel rolling window of last N readings with timestamps
-- [ ] If temperature delta over 20 minutes < 2°C and channel is active, set `stall_detected = true`
-- [ ] Emit `stall_detected` boolean per channel in snapshot JSON (consumed by SSE `/events` stream)
-- [ ] Fire configured alert method on stall (separate from target-temp alert); clear when temp resumes rising (delta > 1°C over 5 min)
-- [ ] Add `stall_alert_enabled` boolean to `channel_alert_t` in `config_mgr.h`
+- [x] Add stall detection to `alert_mgr`: track per-channel rolling window of last N readings with timestamps
+- [x] If temperature delta over 20 minutes < 2°C and channel is active, set `stall_detected = true`
+- [x] Emit `stall_detected` boolean per channel in snapshot JSON (consumed by SSE `/events` stream)
+- [x] Fire configured alert method on stall (separate from target-temp alert); clear when temp resumes rising (delta > 1°C over 5 min)
+- [x] Add `stall_alert_enabled` boolean to `channel_alert_t` in `config_mgr.h`
 
 ### Cook profiles (UI)
 
-- [ ] Create `src/lib/stores/profileStore.svelte.ts`: fetch/save profiles from `/profiles`, persist selection in `localStorage`
-- [ ] Create `src/views/Profiles.svelte`: profile library view — list, create, edit, delete, apply to channels
-- [ ] Pre-seed a read-only "starter library" in the UI (not firmware): common presets with USDA-safe temps:
+- [x] Create `src/lib/stores/profileStore.svelte.ts`: fetch/save profiles from `/profiles`, persist selection in `localStorage`
+- [x] Create `src/views/Profiles.svelte`: profile library view — list, create, edit, delete, apply to channels
+- [x] Pre-seed a read-only "starter library" in the UI (not firmware): common presets with USDA-safe temps:
   - Brisket: 165°F wrap, 203°F finish
   - Pork shoulder: 165°F wrap, 200°F finish
   - Chicken breast: 165°F
   - Medium-rare beef: 130°F
   - Medium beef: 145°F
-- [ ] Add profile selector dropdown to `ChannelCard` — applying a profile sets that channel's alert target
-- [ ] Show stall badge on `ChannelCard` when `stall_detected === true` with elapsed stall time
-- [ ] Multi-stage cook progress: show current stage and next target on ChannelCard when a multi-stage profile is active
+- [x] Add profile selector dropdown to `ChannelCard` — applying a profile sets that channel's alert target
+- [x] Show stall badge on `ChannelCard` when `stall_detected === true` with elapsed stall time
+- [x] Multi-stage cook progress: show current stage and next target on ChannelCard when a multi-stage profile is active
 
 ---
 

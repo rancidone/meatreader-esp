@@ -5,6 +5,7 @@ idf_component_register(
         config_mgr
         sensor_mgr
         esp_http_client
+        esp_timer
         json
         freertos
         log

@@ -3,13 +3,15 @@
   import Config       from './views/Config.svelte';
   import Calibration  from './views/Calibration.svelte';
   import Diagnostics  from './views/Diagnostics.svelte';
+  import Profiles     from './views/Profiles.svelte';
 
-  type View = 'dashboard' | 'config' | 'calibration' | 'diagnostics';
+  type View = 'dashboard' | 'config' | 'calibration' | 'diagnostics' | 'profiles';
 
   let active = $state<View>('dashboard');
 
   const tabs: { id: View; label: string }[] = [
     { id: 'dashboard',   label: 'Dashboard'   },
+    { id: 'profiles',    label: 'Profiles'    },
     { id: 'config',      label: 'Config'      },
     { id: 'calibration', label: 'Calibration' },
     { id: 'diagnostics', label: 'Diagnostics' },
@@ -39,6 +41,8 @@
       <Calibration />
     {:else if active === 'diagnostics'}
       <Diagnostics />
+    {:else if active === 'profiles'}
+      <Profiles />
     {/if}
   </main>
 </div>
