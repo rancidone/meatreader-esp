@@ -71,6 +71,12 @@ static void apply_json_patch(device_config_t *cfg, cJSON *patch)
                     cfg->channels[i].enabled = cJSON_IsTrue(enabled);
                 }
 
+                cJSON *label = cJSON_GetObjectItemCaseSensitive(ch, "label");
+                if (cJSON_IsString(label) && label->valuestring) {
+                    snprintf(cfg->channels[i].label, CONFIG_CHANNEL_LABEL_MAX,
+                             "%s", label->valuestring);
+                }
+
                 cJSON *sh = cJSON_GetObjectItemCaseSensitive(ch, "steinhart_hart");
                 if (cJSON_IsObject(sh)) {
                     cJSON *a = cJSON_GetObjectItemCaseSensitive(sh, "a");
