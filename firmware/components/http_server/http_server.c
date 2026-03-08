@@ -10,7 +10,7 @@ static const char *TAG = "http_server";
 static httpd_handle_t    s_server  = NULL;
 static http_app_ctx_t    s_ctx;
 
-// Forward declarations for handlers defined in routes_*.c
+// Forward declarations — normal operation routes
 esp_err_t handle_temps_latest(httpd_req_t *req);
 esp_err_t handle_status(httpd_req_t *req);
 esp_err_t handle_device(httpd_req_t *req);
@@ -27,9 +27,15 @@ esp_err_t handle_cal_solve(httpd_req_t *req);
 esp_err_t handle_cal_accept(httpd_req_t *req);
 esp_err_t handle_metrics(httpd_req_t *req);
 
-// ── URI table ─────────────────────────────────────────────────────────────────
+// Forward declarations — provisioning routes (routes_provision.c)
+esp_err_t handle_provision_root(httpd_req_t *req);
+esp_err_t handle_captive_redirect(httpd_req_t *req);
+esp_err_t handle_provision_connect(httpd_req_t *req);
+esp_err_t handle_provision_status(httpd_req_t *req);
 
-static const httpd_uri_t s_uris[] = {
+// ── Normal URI table ──────────────────────────────────────────────────────────
+
+static const httpd_uri_t s_normal_uris[] = {
     // Temperature
     { .uri = "/temps/latest",          .method = HTTP_GET,   .handler = handle_temps_latest       },
     // Status / device info
@@ -43,26 +49,47 @@ static const httpd_uri_t s_uris[] = {
     { .uri = "/config/revert-staged",  .method = HTTP_POST,  .handler = handle_config_revert_staged },
     { .uri = "/config/revert-active",  .method = HTTP_POST,  .handler = handle_config_revert_active },
     // Calibration
-    { .uri = "/calibration/live",         .method = HTTP_GET,  .handler = handle_cal_live          },
-    { .uri = "/calibration/session/start",.method = HTTP_POST, .handler = handle_cal_session_start },
-    { .uri = "/calibration/point/capture",.method = HTTP_POST, .handler = handle_cal_point_capture },
-    { .uri = "/calibration/solve",        .method = HTTP_POST, .handler = handle_cal_solve         },
-    { .uri = "/calibration/accept",       .method = HTTP_POST, .handler = handle_cal_accept        },
+    { .uri = "/calibration/live",          .method = HTTP_GET,  .handler = handle_cal_live          },
+    { .uri = "/calibration/session/start", .method = HTTP_POST, .handler = handle_cal_session_start },
+    { .uri = "/calibration/point/capture", .method = HTTP_POST, .handler = handle_cal_point_capture },
+    { .uri = "/calibration/solve",         .method = HTTP_POST, .handler = handle_cal_solve         },
+    { .uri = "/calibration/accept",        .method = HTTP_POST, .handler = handle_cal_accept        },
     // Prometheus metrics
-    { .uri = "/metrics",                  .method = HTTP_GET,  .handler = handle_metrics           },
+    { .uri = "/metrics",                   .method = HTTP_GET,  .handler = handle_metrics           },
 };
 
-#define NUM_URIS  (sizeof(s_uris) / sizeof(s_uris[0]))
+#define NUM_NORMAL_URIS  (sizeof(s_normal_uris) / sizeof(s_normal_uris[0]))
+
+// ── Provisioning URI table ────────────────────────────────────────────────────
+
+static const httpd_uri_t s_provision_uris[] = {
+    { .uri = "/",                    .method = HTTP_GET,  .handler = handle_provision_root    },
+    { .uri = "/provision/connect",   .method = HTTP_POST, .handler = handle_provision_connect },
+    { .uri = "/provision/status",    .method = HTTP_GET,  .handler = handle_provision_status  },
+    // Captive portal detection probes — OS-specific
+    { .uri = "/generate_204",        .method = HTTP_GET,  .handler = handle_captive_redirect  },
+    { .uri = "/hotspot-detect.html", .method = HTTP_GET,  .handler = handle_captive_redirect  },
+    { .uri = "/ncsi.txt",            .method = HTTP_GET,  .handler = handle_captive_redirect  },
+    { .uri = "/connecttest.txt",     .method = HTTP_GET,  .handler = handle_captive_redirect  },
+    { .uri = "/redirect",            .method = HTTP_GET,  .handler = handle_captive_redirect  },
+};
+
+#define NUM_PROVISION_URIS  (sizeof(s_provision_uris) / sizeof(s_provision_uris[0]))
+
+// ── Lifecycle ─────────────────────────────────────────────────────────────────
 
 esp_err_t http_server_start(const http_app_ctx_t *ctx)
 {
     s_ctx = *ctx;
 
+    int num_uris = ctx->provisioning
+                   ? (int)NUM_PROVISION_URIS
+                   : (int)NUM_NORMAL_URIS;
+
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.server_port      = 80;
-    config.max_uri_handlers = NUM_URIS + 2;
+    config.max_uri_handlers = num_uris + 2;
     config.stack_size       = 8192;
-    // Increase URI match strictness (no wildcard needed here)
     config.uri_match_fn     = httpd_uri_match_wildcard;
 
     esp_err_t err = httpd_start(&s_server, &config);
@@ -71,14 +98,15 @@ esp_err_t http_server_start(const http_app_ctx_t *ctx)
         return err;
     }
 
-    // Register each URI handler, attaching the shared app context.
-    for (int i = 0; i < (int)NUM_URIS; i++) {
-        httpd_uri_t uri = s_uris[i];
+    const httpd_uri_t *uris = ctx->provisioning ? s_provision_uris : s_normal_uris;
+    for (int i = 0; i < num_uris; i++) {
+        httpd_uri_t uri = uris[i];
         uri.user_ctx = &s_ctx;
         httpd_register_uri_handler(s_server, &uri);
     }
 
-    ESP_LOGI(TAG, "HTTP server started (%d routes registered)", (int)NUM_URIS);
+    ESP_LOGI(TAG, "HTTP server started (%d routes, %s mode)",
+             num_uris, ctx->provisioning ? "provisioning" : "normal");
     return ESP_OK;
 }
 
