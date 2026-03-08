@@ -8,26 +8,26 @@ Generated from planning session 2026-03-08.
 
 ### Firmware
 
-- [ ] Add `alert_method_t` enum to `config_mgr.h`: `ALERT_METHOD_NONE`, `ALERT_METHOD_WEBHOOK`, `ALERT_METHOD_MQTT`
-- [ ] Add `channel_alert_t` struct to `config_mgr.h`: `enabled`, `target_temp_c`, `method`, `webhook_url[128]`, `triggered`
-- [ ] Add `channel_alert_t alerts[CONFIG_NUM_CHANNELS]` to `device_config_t`
-- [ ] Add `uint32_t schema_version` to `device_config_t`; handle version mismatch in `config_mgr_init` (fall back to defaults, erase stale NVS key)
-- [ ] Create `firmware/components/alert_mgr/` component:
+- [x] Add `alert_method_t` enum to `config_mgr.h`: `ALERT_METHOD_NONE`, `ALERT_METHOD_WEBHOOK`, `ALERT_METHOD_MQTT`
+- [x] Add `channel_alert_t` struct to `config_mgr.h`: `enabled`, `target_temp_c`, `method`, `webhook_url[128]`, `triggered`
+- [x] Add `channel_alert_t alerts[CONFIG_NUM_CHANNELS]` to `device_config_t`
+- [x] Add `uint32_t schema_version` to `device_config_t`; handle version mismatch in `config_mgr_init` (fall back to defaults, erase stale NVS key)
+- [x] Create `firmware/components/alert_mgr/` component:
   - `include/alert_mgr.h`: `alert_mgr_init`, `alert_mgr_check_snapshot`, `alert_mgr_deinit`
   - `alert_mgr.c`: per-channel check; fire on `temp >= target && !triggered`; hysteresis: clear `triggered` when temp drops 5°C below target; dispatch via webhook (`esp_http_client`) or MQTT (`esp-mqtt`) in a short-lived spawned task
-- [ ] Wire `alert_mgr_init` in `main.c` after `sensor_mgr_start`
-- [ ] Call `alert_mgr_check_snapshot` after each sensor snapshot update
-- [ ] Add `alert_mgr_t *alert_mgr` to `http_app_ctx_t` in `http_server.h`
-- [ ] Create `routes_alerts.c`: `GET /alerts`, `PATCH /alerts/staged`
-- [ ] Extend `apply_json_patch` in `routes_config.c` to handle `alerts` array
-- [ ] Emit `alert_triggered` boolean per channel in `channel_reading_to_json` (from `http_util.h`)
+- [x] Wire `alert_mgr_init` in `main.c` after `sensor_mgr_start`
+- [x] Call `alert_mgr_check_snapshot` after each sensor snapshot update
+- [x] Add `alert_mgr_t *alert_mgr` to `http_app_ctx_t` in `http_server.h`
+- [x] Create `routes_alerts.c`: `GET /alerts`, `PATCH /alerts/staged`
+- [x] Extend `apply_json_patch` in `routes_config.c` to handle `alerts` array
+- [x] Emit `alert_triggered` boolean per channel in `channel_reading_to_json` (from `http_util.h`)
 
 ### UI
 
-- [ ] Add `alert_triggered?: boolean` to `ChannelReading` in `types.ts`
-- [ ] Add `AlertConfig` type to `types.ts`: `enabled`, `target_temp_c`, `method`, `webhook_url`
-- [ ] Add "Alerts" section to `Config.svelte`: per-channel enabled toggle, target temp input (respects unit pref), method dropdown, conditional webhook URL input
-- [ ] Show alert active/triggered badge on `ChannelCard` when `alert_triggered === true`
+- [x] Add `alert_triggered?: boolean` to `ChannelReading` in `types.ts`
+- [x] Add `AlertConfig` type to `types.ts`: `enabled`, `target_temp_c`, `method`, `webhook_url`
+- [x] Add "Alerts" section to `Config.svelte`: per-channel enabled toggle, target temp input (respects unit pref), method dropdown, conditional webhook URL input
+- [x] Show alert active/triggered badge on `ChannelCard` when `alert_triggered === true`
 
 ---
 
