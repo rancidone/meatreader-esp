@@ -13,11 +13,11 @@
 
 ### Stall detection (firmware)
 
-- [ ] Add stall detection to `alert_mgr`: track per-channel rolling window of last N readings with timestamps
-- [ ] If temperature delta over 20 minutes < 2°C and channel is active, set `stall_detected = true`
-- [ ] Emit `stall_detected` boolean per channel in snapshot JSON (consumed by SSE `/events` stream)
-- [ ] Fire configured alert method on stall (separate from target-temp alert); clear when temp resumes rising (delta > 1°C over 5 min)
-- [ ] Add `stall_alert_enabled` boolean to `channel_alert_t` in `config_mgr.h`
+- [x] Add stall detection to `alert_mgr`: track per-channel rolling window of last N readings with timestamps
+- [x] If temperature delta over 20 minutes < 2°C and channel is active, set `stall_detected = true`
+- [x] Emit `stall_detected` boolean per channel in snapshot JSON (consumed by SSE `/events` stream)
+- [x] Fire configured alert method on stall (separate from target-temp alert); clear when temp resumes rising (delta > 1°C over 5 min)
+- [x] Add `stall_alert_enabled` boolean to `channel_alert_t` in `config_mgr.h`
 
 ### Cook profiles (UI)
 
