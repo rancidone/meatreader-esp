@@ -33,7 +33,6 @@ die() {
   echo "ERROR: $*" >&2
   exit 1
 }
-
 require_cmd() {
   command -v "$1" >/dev/null 2>&1 || die "missing required command: $1"
 }
@@ -55,7 +54,6 @@ install_apt_packages() {
   fi
 
   command -v apt-get >/dev/null 2>&1 || die "apt-get not available, cannot install packages"
-
   if [[ "$(id -u)" -eq 0 ]]; then
     apt_cmd=(apt-get)
   elif command -v sudo >/dev/null 2>&1; then
@@ -131,7 +129,6 @@ validate_idf_py() {
     fi
     warn "idf.py is on PATH but failed to run."
   fi
-
   if [[ -x "$IDF_PATH/tools/idf.py" ]]; then
     if IDF_PATH="$IDF_PATH" "$IDF_PATH/tools/idf.py" --version; then
       rm -f "$export_log"
