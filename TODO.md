@@ -40,10 +40,10 @@ Generated from planning session 2026-03-08.
 
 ### Channel labels
 
-- [ ] Add `char label[32]` to `channel_config_t` in `config_mgr.h`; default to `"Channel N"` if empty
-- [ ] Emit `label` in `channel_config_to_json`; accept in `apply_json_patch`
-- [ ] Show label in `ChannelCard` header instead of hardcoded `"Channel {id}"`
-- [ ] Add label text input to Config.svelte channel fieldsets
+- [x] Add `char label[32]` to `channel_config_t` in `config_mgr.h`; default to `"Channel N"` if empty
+- [x] Emit `label` in `channel_config_to_json`; accept in `apply_json_patch`
+- [x] Show label in `ChannelCard` header instead of hardcoded `"Channel {id}"`
+- [x] Add label text input to Config.svelte channel fieldsets
 
 ### Cook timer (pure UI)
 
