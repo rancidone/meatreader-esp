@@ -12,7 +12,7 @@
 
 // Bumped whenever device_config_t layout changes. Mismatched NVS blobs are
 // discarded and defaults are restored instead.
-#define CONFIG_SCHEMA_VERSION   3u
+#define CONFIG_SCHEMA_VERSION   4u
 
 // Per-channel thermistor configuration.
 typedef struct {
@@ -37,6 +37,8 @@ typedef struct {
     char           webhook_url[128];
     // Runtime state — true after alert fires; cleared by hysteresis (5°C drop).
     bool           triggered;
+    // Stall alert: fire when temperature hasn't risen > 2°C over 20 minutes.
+    bool           stall_alert_enabled;
 } channel_alert_t;
 
 // ── Cook profile types ────────────────────────────────────────────────────────
