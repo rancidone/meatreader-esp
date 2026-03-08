@@ -56,7 +56,7 @@
 
 - [x] Generate VAPID key pair (one-time, stored in `localStorage` as the "server" key for this local device)
 - [x] Register push subscription in service worker via `pushManager.subscribe`
-- [ ] Add `POST /push/notify` endpoint on ESP32 that accepts a JSON payload and forwards it to the browser's push endpoint via `esp_http_client` — requires outbound HTTPS (`esp-tls`)
+- [x] Add `POST /push/notify` endpoint on ESP32 that accepts a JSON payload and forwards it to the browser's push endpoint via `esp_http_client` — requires outbound HTTPS (`esp-tls`)
 - [x] Evaluate feasibility: VAPID signing requires ECDSA P-256 — check if `mbedtls` (bundled in ESP-IDF) can handle it; if not, fall back to service-worker-only Notification API (no VAPID needed for same-device push)
 
 ### UI polish for PWA
