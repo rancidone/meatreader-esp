@@ -5,6 +5,7 @@
 #include "board.h"
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "esp_task_wdt.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -21,6 +22,9 @@ static const char *TAG = "sensor_mgr";
 // Log a summary every N ticks rather than every sample.
 #define LOG_EVERY_N_TICKS    10
 
+// Number of consecutive errors before a channel is skipped for one tick.
+#define CONSEC_ERROR_SKIP_THRESHOLD  5
+
 struct sensor_mgr {
     ads1115_handle_t   ads;
     config_mgr_t      *config;
@@ -30,6 +34,8 @@ struct sensor_mgr {
     TaskHandle_t       task_handle;
     // Per-channel EMA state. NaN = uninitialized (seeds on first sample).
     float              ema[CONFIG_NUM_CHANNELS];
+    // Per-channel consecutive error counter for hardware robustness.
+    uint8_t            consecutive_errors[CONFIG_NUM_CHANNELS];
 };
 
 // ── Sampling ──────────────────────────────────────────────────────────────────
@@ -49,6 +55,12 @@ static channel_reading_t sample_channel(struct sensor_mgr *mgr, int idx,
     if (!ch_cfg->enabled) {
         r.quality = SENSOR_QUALITY_DISABLED;
         return r;
+    }
+
+    // Bounds check: ADS1115 has 4 single-ended channels (0–3).
+    if (ch_cfg->adc_channel > 3) {
+        ESP_LOGE(TAG, "ch%d: invalid adc_channel %u (must be 0–3)", idx, ch_cfg->adc_channel);
+        return r;  // quality = SENSOR_QUALITY_ERROR
     }
 
     int16_t raw = 0;
@@ -102,8 +114,10 @@ static void sensor_task(void *pvParam)
     struct sensor_mgr *mgr = (struct sensor_mgr *)pvParam;
     uint32_t tick = 0;
 
-    // Read ema_alpha from config properly on each tick
     ESP_LOGI(TAG, "Sensor task running");
+
+    // Register this task with the task watchdog.
+    esp_task_wdt_add(NULL);
 
     while (1) {
         device_config_t cfg;
@@ -114,14 +128,38 @@ static void sensor_task(void *pvParam)
         };
 
         for (int i = 0; i < CONFIG_NUM_CHANNELS; i++) {
+            // Skip channel for this tick if it has exceeded the error threshold.
+            if (mgr->consecutive_errors[i] > CONSEC_ERROR_SKIP_THRESHOLD) {
+                ESP_LOGW(TAG, "ch%d: skipping (consecutive_errors=%u)", i,
+                         mgr->consecutive_errors[i]);
+                // Preserve the last snapshot reading so callers still see stale data.
+                xSemaphoreTake(mgr->lock, portMAX_DELAY);
+                snap.channels[i] = mgr->snapshot.channels[i];
+                xSemaphoreGive(mgr->lock);
+                // Decay the counter so the channel is retried after a while.
+                mgr->consecutive_errors[i]--;
+                continue;
+            }
+
             snap.channels[i] = sample_channel(mgr, i, &cfg.channels[i],
                                               cfg.ema_alpha, cfg.spike_reject_delta_c);
+
+            if (snap.channels[i].quality == SENSOR_QUALITY_ERROR) {
+                if (mgr->consecutive_errors[i] < UINT8_MAX) {
+                    mgr->consecutive_errors[i]++;
+                }
+            } else {
+                mgr->consecutive_errors[i] = 0;
+            }
         }
 
         xSemaphoreTake(mgr->lock, portMAX_DELAY);
         mgr->snapshot       = snap;
         mgr->snapshot_valid = true;
         xSemaphoreGive(mgr->lock);
+
+        // Pat the watchdog after a successful sampling cycle.
+        esp_task_wdt_reset();
 
         tick++;
         if (tick % LOG_EVERY_N_TICKS == 0) {

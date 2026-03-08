@@ -25,6 +25,7 @@ esp_err_t handle_cal_session_start(httpd_req_t *req);
 esp_err_t handle_cal_point_capture(httpd_req_t *req);
 esp_err_t handle_cal_solve(httpd_req_t *req);
 esp_err_t handle_cal_accept(httpd_req_t *req);
+esp_err_t handle_metrics(httpd_req_t *req);
 
 // ── URI table ─────────────────────────────────────────────────────────────────
 
@@ -47,6 +48,8 @@ static const httpd_uri_t s_uris[] = {
     { .uri = "/calibration/point/capture",.method = HTTP_POST, .handler = handle_cal_point_capture },
     { .uri = "/calibration/solve",        .method = HTTP_POST, .handler = handle_cal_solve         },
     { .uri = "/calibration/accept",       .method = HTTP_POST, .handler = handle_cal_accept        },
+    // Prometheus metrics
+    { .uri = "/metrics",                  .method = HTTP_GET,  .handler = handle_metrics           },
 };
 
 #define NUM_URIS  (sizeof(s_uris) / sizeof(s_uris[0]))

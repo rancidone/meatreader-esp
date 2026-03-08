@@ -3,6 +3,7 @@
 #include "http_util.h"
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "esp_wifi.h"
 
 static const char *TAG = "route_status";
 
@@ -45,12 +46,20 @@ esp_err_t handle_status(httpd_req_t *req)
         }
     }
 
+    // Read WiFi RSSI; emit 0 if not connected or call fails.
+    int rssi = 0;
+    wifi_ap_record_t ap_info;
+    if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
+        rssi = ap_info.rssi;
+    }
+
     cJSON *obj = cJSON_CreateObject();
-    cJSON_AddStringToObject(obj, "status",     healthy ? "ok" : "degraded");
-    cJSON_AddBoolToObject(obj,   "healthy",    healthy);
+    cJSON_AddStringToObject(obj, "status",       healthy ? "ok" : "degraded");
+    cJSON_AddBoolToObject(obj,   "healthy",      healthy);
     cJSON_AddItemToObject(obj,   "health_flags", flags);
-    cJSON_AddNumberToObject(obj, "uptime_ms",  (double)now_ms);
-    cJSON_AddStringToObject(obj, "firmware",   FIRMWARE_VERSION);
+    cJSON_AddNumberToObject(obj, "uptime_ms",    (double)now_ms);
+    cJSON_AddStringToObject(obj, "firmware",     FIRMWARE_VERSION);
+    cJSON_AddNumberToObject(obj, "wifi_rssi_dbm", rssi);
 
     ESP_LOGD(TAG, "GET /status → 200 healthy=%s", healthy ? "true" : "false");
     return send_json(req, obj, 200);

@@ -139,7 +139,7 @@ static inline cJSON *snapshot_to_json(const sensor_snapshot_t *snap)
     cJSON *obj      = cJSON_CreateObject();
     cJSON *channels = cJSON_CreateArray();
 
-    cJSON_AddNumberToObject(obj, "timestamp_ms", (double)snap->timestamp_ms);
+    cJSON_AddNumberToObject(obj, "timestamp", (double)snap->timestamp_ms);
     for (int i = 0; i < CONFIG_NUM_CHANNELS; i++) {
         cJSON_AddItemToArray(channels, channel_reading_to_json(&snap->channels[i]));
     }
