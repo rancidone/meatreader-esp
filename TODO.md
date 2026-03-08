@@ -39,31 +39,31 @@
 
 ### PWA shell
 
-- [ ] Add `vite-plugin-pwa` to dev dependencies
-- [ ] Configure `VitePWA` plugin in `vite.config.ts`: `registerType: 'autoUpdate'`, `manifest` with name/icons/theme color
-- [ ] Create `public/manifest.webmanifest`: app name "Meatreader", short name, icons at 192/512px, `display: standalone`, `start_url: /`
-- [ ] Create placeholder app icons (192×192 and 512×512 PNG)
-- [ ] Add `<link rel="manifest">` and `<meta name="theme-color">` to `index.html`
+- [x] Add `vite-plugin-pwa` to dev dependencies
+- [x] Configure `VitePWA` plugin in `vite.config.ts`: `registerType: 'autoUpdate'`, `manifest` with name/icons/theme color
+- [x] Create `public/manifest.webmanifest`: app name "Meatreader", short name, icons at 192/512px, `display: standalone`, `start_url: /`
+- [x] Create placeholder app icons (192×192 and 512×512 PNG)
+- [x] Add `<link rel="manifest">` and `<meta name="theme-color">` to `index.html`
 
 ### Service worker — background SSE keepalive
 
-- [ ] Create `src/sw.ts` (Workbox or hand-rolled): keep SSE `/events` connection alive when tab is backgrounded
-- [ ] On SSE `snapshot` message: if a channel's temperature crosses its alert target, fire `self.registration.showNotification(...)` — works even with tab in background (as long as PWA is installed)
-- [ ] Request `Notification` permission on first alert configuration in `Config.svelte`
-- [ ] Show an "Install app" prompt in the UI header when `beforeinstallprompt` fires (Android/Chrome)
+- [x] Create `src/sw.ts` (Workbox or hand-rolled): keep SSE `/events` connection alive when tab is backgrounded
+- [x] On SSE `snapshot` message: if a channel's temperature crosses its alert target, fire `self.registration.showNotification(...)` — works even with tab in background (as long as PWA is installed)
+- [x] Request `Notification` permission on first alert configuration in `Config.svelte`
+- [x] Show an "Install app" prompt in the UI header when `beforeinstallprompt` fires (Android/Chrome)
 
 ### Web Push (VAPID) — optional enhancement
 
-- [ ] Generate VAPID key pair (one-time, stored in `localStorage` as the "server" key for this local device)
-- [ ] Register push subscription in service worker via `pushManager.subscribe`
+- [x] Generate VAPID key pair (one-time, stored in `localStorage` as the "server" key for this local device)
+- [x] Register push subscription in service worker via `pushManager.subscribe`
 - [ ] Add `POST /push/notify` endpoint on ESP32 that accepts a JSON payload and forwards it to the browser's push endpoint via `esp_http_client` — requires outbound HTTPS (`esp-tls`)
-- [ ] Evaluate feasibility: VAPID signing requires ECDSA P-256 — check if `mbedtls` (bundled in ESP-IDF) can handle it; if not, fall back to service-worker-only Notification API (no VAPID needed for same-device push)
+- [x] Evaluate feasibility: VAPID signing requires ECDSA P-256 — check if `mbedtls` (bundled in ESP-IDF) can handle it; if not, fall back to service-worker-only Notification API (no VAPID needed for same-device push)
 
 ### UI polish for PWA
 
-- [ ] Add install/update banner component to `App.svelte`
-- [ ] Add offline indicator when SSE connection is lost (already partially handled by error state)
-- [ ] Cache `/device` and `/config` responses in service worker for offline display
+- [x] Add install/update banner component to `App.svelte`
+- [x] Add offline indicator when SSE connection is lost (already partially handled by error state)
+- [x] Cache `/device` and `/config` responses in service worker for offline display
 
 ---
 
