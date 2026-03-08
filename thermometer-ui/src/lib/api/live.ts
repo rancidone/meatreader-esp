@@ -19,7 +19,6 @@ export { temps, status, device, config, calibration, api, ApiError } from './cli
 export type {
   Snapshot,
   ChannelReading,
-  HistoryResponse,
   StatusResponse,
   DeviceResponse,
   DeviceConfig,

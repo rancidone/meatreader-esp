@@ -1,9 +1,5 @@
 // Shared TypeScript types derived directly from the firmware JSON shapes.
-// Keep in sync with:
-//   src/sensors/model.toit  — Snapshot, ChannelReading
-//   src/config/model.toit   — DeviceConfig, ChannelConfig, SteinhartHartCoeffs
-//   src/calibration/model.toit — CalibrationSession, CalibrationPoint
-//   src/http/routes.toit    — response envelopes
+// Keep in sync with firmware/components/http_server/http_util.h.
 
 // ── Sensor ───────────────────────────────────────────────────────────────────
 
@@ -23,12 +19,6 @@ export interface Snapshot {
   channels: ChannelReading[];
   // Present in /temps/latest (full map); absent in /temps/history (lean map).
   health_flags?: string[];
-}
-
-export interface HistoryResponse {
-  seconds: number;
-  count: number;
-  snapshots: Snapshot[];
 }
 
 // ── Status / Device ──────────────────────────────────────────────────────────
@@ -58,7 +48,6 @@ export interface SteinhartHartCoeffs {
 export interface ChannelConfig {
   enabled: boolean;
   adc_channel: number;
-  divider_resistor_ohms: number;
   steinhart_hart: SteinhartHartCoeffs;
 }
 
@@ -66,7 +55,6 @@ export interface DeviceConfig {
   wifi_ssid: string;
   wifi_password: string;
   sample_rate_hz: number;
-  publish_rate_hz: number;
   ema_alpha: number;
   spike_reject_delta_c: number;
   channels: ChannelConfig[];
