@@ -12,6 +12,7 @@
   const { snapshots, channelId, unit, color }: Props = $props();
 
   let canvas = $state<HTMLCanvasElement | undefined>(undefined);
+  const minDisplaySpan = $derived(unit === 'F' ? 10 : 6);
 
   $effect(() => {
     const el = canvas;
@@ -26,13 +27,15 @@
       })
       .filter((p): p is { x: number; y: number } => p !== null);
 
-    draw(el, points, color);
+    draw(el, points, color, unit, minDisplaySpan);
   });
 
   function draw(
     el:     HTMLCanvasElement,
     points: { x: number; y: number }[],
     stroke: string,
+    unit:   TempUnit,
+    minSpan: number,
   ): void {
     const dpr  = window.devicePixelRatio ?? 1;
     const rect = el.getBoundingClientRect();
@@ -58,10 +61,15 @@
     const ys   = points.map(p => p.y);
     const xMin = Math.min(...xs), xMax = Math.max(...xs);
     const yMin = Math.min(...ys), yMax = Math.max(...ys);
-    const yPad = (yMax - yMin) * 0.15 || 1;   // prevent flat-line collapse
+    const span = yMax - yMin;
+    const baseSpan = Math.max(span, minSpan);
+    const yPad = Math.max(baseSpan * 0.12, 0.5);
+    const yMid = (yMin + yMax) / 2;
+    const plotMin = yMid - baseSpan / 2 - yPad;
+    const plotMax = yMid + baseSpan / 2 + yPad;
 
     const px = (x: number) => ((x - xMin) / (xMax - xMin || 1)) * w;
-    const py = (y: number) => h - ((y - (yMin - yPad)) / (yMax - yMin + yPad * 2)) * h;
+    const py = (y: number) => h - ((y - plotMin) / (plotMax - plotMin || 1)) * h;
 
     // Filled area under the line.
     ctx.beginPath();
@@ -81,7 +89,19 @@
     ctx.strokeStyle = stroke;
     ctx.lineWidth   = 1.5;
     ctx.lineJoin    = 'round';
+    ctx.lineCap     = 'round';
     ctx.stroke();
+
+    // Show plotted bounds so compressed view has explicit context.
+    const decimals = unit === 'F' ? 0 : 1;
+    ctx.font = `10px var(--font-mono), ui-monospace, monospace`;
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(10, 13, 17, 0.66)';
+    ctx.fillRect(w - 58, 2, 56, 12);
+    ctx.fillRect(w - 58, h - 14, 56, 12);
+    ctx.fillStyle = 'rgba(234, 237, 243, 0.9)';
+    ctx.fillText(`${plotMax.toFixed(decimals)}°${unit}`, w - 4, 12);
+    ctx.fillText(`${plotMin.toFixed(decimals)}°${unit}`, w - 4, h - 4);
   }
 </script>
 

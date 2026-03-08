@@ -16,6 +16,7 @@
   let container = $state<HTMLDivElement | undefined>(undefined);
   // $state so the data-update effect can track when the instance becomes ready.
   let uplotInstance = $state<uPlot | null>(null);
+  const minDisplaySpan = $derived(unit === 'F' ? 16 : 9);  // keep trend visible at low noise
 
   // Build aligned uPlot data arrays from history (recomputes when history/unit change).
   const chartData = $derived.by((): uPlot.AlignedData => {
@@ -45,6 +46,20 @@
       width:  el.clientWidth  || 800,
       height: el.clientHeight || 380,
       tzDate: ts => uPlot.tzDate(new Date(ts * 1e3), Intl.DateTimeFormat().resolvedOptions().timeZone),
+      scales: {
+        y: {
+          auto: true,
+          range: (_u, min, max) => {
+            const low = Number.isFinite(min) ? min : 0;
+            const high = Number.isFinite(max) ? max : low;
+            const span = high - low;
+            const baseSpan = Math.max(span, minDisplaySpan);
+            const pad = baseSpan * 0.12;
+            const mid = (low + high) / 2;
+            return [mid - baseSpan / 2 - pad, mid + baseSpan / 2 + pad];
+          },
+        },
+      },
       series: [
         {},
         {
