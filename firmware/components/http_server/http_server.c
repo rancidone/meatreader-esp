@@ -28,6 +28,7 @@ esp_err_t handle_cal_accept(httpd_req_t *req);
 esp_err_t handle_metrics(httpd_req_t *req);
 esp_err_t handle_alerts_get(httpd_req_t *req);
 esp_err_t handle_alerts_patch_staged(httpd_req_t *req);
+esp_err_t handle_events(httpd_req_t *req);
 
 // Forward declarations — provisioning routes (routes_provision.c)
 esp_err_t handle_provision_root(httpd_req_t *req);
@@ -61,6 +62,8 @@ static const httpd_uri_t s_normal_uris[] = {
     // Alerts
     { .uri = "/alerts",                    .method = HTTP_GET,  .handler = handle_alerts_get        },
     { .uri = "/alerts/staged",             .method = HTTP_PATCH,.handler = handle_alerts_patch_staged },
+    // Server-Sent Events stream
+    { .uri = "/events",                    .method = HTTP_GET,  .handler = handle_events            },
 };
 
 #define NUM_NORMAL_URIS  (sizeof(s_normal_uris) / sizeof(s_normal_uris[0]))
