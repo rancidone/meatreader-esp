@@ -20,6 +20,7 @@ export default defineConfig({
       '/status': { target: 'http://192.168.10.121', changeOrigin: true },
       '/device': { target: 'http://192.168.10.121', changeOrigin: true },
       '/metrics': { target: 'http://192.168.10.121', changeOrigin: true },
+      '/events': { target: 'http://192.168.10.121', changeOrigin: true },
     },
   },
 });
