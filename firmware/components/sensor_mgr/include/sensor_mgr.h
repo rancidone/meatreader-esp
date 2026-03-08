@@ -24,6 +24,7 @@ typedef struct {
     float            raw_adc;         // raw ADS1115 count (float for JSON)
     float            resistance_ohms; // computed thermistor resistance
     sensor_quality_t quality;
+    bool             stall_detected;  // true when temp delta < 2°C over 20 min
 } channel_reading_t;
 
 typedef struct {
@@ -47,5 +48,9 @@ bool sensor_mgr_get_latest(sensor_mgr_t *mgr, sensor_snapshot_t *out_snap);
 // Return the FreeRTOS event group used to signal snapshot updates.
 // Bit 0 (SENSOR_MGR_SNAPSHOT_BIT) is set after each snapshot write.
 EventGroupHandle_t sensor_mgr_get_event_group(sensor_mgr_t *mgr);
+
+// Update the stall_detected flag in the stored snapshot for the given channel.
+// Called by alert_mgr after each stall check to make the flag visible to SSE.
+void sensor_mgr_set_stall_detected(sensor_mgr_t *mgr, int channel, bool stall_detected);
 
 void sensor_mgr_deinit(sensor_mgr_t *mgr);

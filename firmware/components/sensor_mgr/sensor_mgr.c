@@ -252,6 +252,14 @@ EventGroupHandle_t sensor_mgr_get_event_group(sensor_mgr_t *mgr)
     return mgr->snapshot_event_group;
 }
 
+void sensor_mgr_set_stall_detected(sensor_mgr_t *mgr, int channel, bool stall_detected)
+{
+    if (!mgr || channel < 0 || channel >= CONFIG_NUM_CHANNELS) return;
+    xSemaphoreTake(mgr->lock, portMAX_DELAY);
+    mgr->snapshot.channels[channel].stall_detected = stall_detected;
+    xSemaphoreGive(mgr->lock);
+}
+
 void sensor_mgr_deinit(sensor_mgr_t *mgr)
 {
     if (!mgr) return;
