@@ -7,6 +7,7 @@ idf_component_register(
         "routes_status.c"
         "routes_metrics.c"
         "routes_provision.c"
+        "routes_alerts.c"
     INCLUDE_DIRS "include"
     REQUIRES
         esp_http_server
@@ -14,6 +15,7 @@ idf_component_register(
         sensor_mgr
         config_mgr
         calibration
+        alert_mgr
         ref_sensor
         esp_timer
         esp_wifi
