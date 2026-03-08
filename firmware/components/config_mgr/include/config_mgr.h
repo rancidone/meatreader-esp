@@ -8,6 +8,7 @@
 #define CONFIG_NUM_CHANNELS     2
 #define CONFIG_WIFI_SSID_MAX    64
 #define CONFIG_WIFI_PASS_MAX    64
+#define CONFIG_CHANNEL_LABEL_MAX 32
 
 // Bumped whenever device_config_t layout changes. Mismatched NVS blobs are
 // discarded and defaults are restored instead.
@@ -18,6 +19,7 @@ typedef struct {
     bool        enabled;
     int         adc_channel;   // ADS1115 channel index (0 or 1)
     sh_coeffs_t sh;            // Steinhart-Hart coefficients
+    char        label[CONFIG_CHANNEL_LABEL_MAX]; // Human-readable name
 } channel_config_t;
 
 // How a temperature alert is dispatched when it fires.
