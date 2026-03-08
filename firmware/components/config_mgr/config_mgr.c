@@ -12,7 +12,7 @@ static const char *TAG = "config_mgr";
 
 #define NVS_NAMESPACE   "meatreader"
 #define NVS_KEY_CONFIG  "dev_config"
-#define BLOB_VERSION    1u
+#define BLOB_VERSION    2u
 
 // Versioned NVS blob. Version field guards against struct layout changes.
 typedef struct {
@@ -32,6 +32,7 @@ struct config_mgr {
 static void apply_defaults(device_config_t *cfg)
 {
     memset(cfg, 0, sizeof(*cfg));
+    cfg->schema_version         = CONFIG_SCHEMA_VERSION;
     strncpy(cfg->wifi_ssid,     CONFIG_WIFI_SSID,     sizeof(cfg->wifi_ssid)     - 1);
     strncpy(cfg->wifi_password, CONFIG_WIFI_PASSWORD, sizeof(cfg->wifi_password) - 1);
     cfg->sample_rate_hz         = CONFIG_DEFAULT_SAMPLE_RATE_HZ;
@@ -41,6 +42,12 @@ static void apply_defaults(device_config_t *cfg)
         cfg->channels[i].enabled     = true;
         cfg->channels[i].adc_channel = i;
         cfg->channels[i].sh          = THERM_MATH_DEFAULT_COEFFS;
+        // alerts default: disabled, no target, no method
+        cfg->alerts[i].enabled      = false;
+        cfg->alerts[i].target_temp_c = 0.0f;
+        cfg->alerts[i].method        = ALERT_METHOD_NONE;
+        cfg->alerts[i].webhook_url[0] = '\0';
+        cfg->alerts[i].triggered     = false;
     }
 }
 
@@ -121,23 +128,32 @@ esp_err_t config_mgr_init(config_mgr_t **out)
 
     esp_err_t err = nvs_load_config(&mgr->persisted);
     if (err == ESP_OK) {
-        // Guard: nvs_load_config() replaces the entire struct, including wifi
-        // credentials.  If the stored blob has no SSID or no password (e.g.
-        // config was committed before credentials were set, or from an older
-        // build that didn't store them), fall back to the compiled-in menuconfig
-        // defaults so the device doesn't silently lose network access.
-        // A non-empty SSID+password pair was explicitly committed via the HTTP
-        // API and is honoured as-is.
-        if (mgr->persisted.wifi_ssid[0] == '\0' || mgr->persisted.wifi_password[0] == '\0') {
-            strncpy(mgr->persisted.wifi_ssid,     CONFIG_WIFI_SSID,
-                    sizeof(mgr->persisted.wifi_ssid)     - 1);
-            strncpy(mgr->persisted.wifi_password, CONFIG_WIFI_PASSWORD,
-                    sizeof(mgr->persisted.wifi_password) - 1);
-            ESP_LOGW(TAG, "NVS config has incomplete WiFi credentials — "
-                          "restored compiled-in defaults (ssid='%s')", CONFIG_WIFI_SSID);
+        // Schema version check: if the loaded config was written by a different
+        // firmware version the struct layout may differ.  Fall back to defaults
+        // so the device doesn't boot with corrupted or misinterpreted values.
+        if (mgr->persisted.schema_version != CONFIG_SCHEMA_VERSION) {
+            ESP_LOGW(TAG, "NVS config schema v%lu != expected v%u — discarding, using defaults",
+                     (unsigned long)mgr->persisted.schema_version, CONFIG_SCHEMA_VERSION);
+            apply_defaults(&mgr->persisted);
+        } else {
+            // Guard: nvs_load_config() replaces the entire struct, including wifi
+            // credentials.  If the stored blob has no SSID or no password (e.g.
+            // config was committed before credentials were set, or from an older
+            // build that didn't store them), fall back to the compiled-in menuconfig
+            // defaults so the device doesn't silently lose network access.
+            // A non-empty SSID+password pair was explicitly committed via the HTTP
+            // API and is honoured as-is.
+            if (mgr->persisted.wifi_ssid[0] == '\0' || mgr->persisted.wifi_password[0] == '\0') {
+                strncpy(mgr->persisted.wifi_ssid,     CONFIG_WIFI_SSID,
+                        sizeof(mgr->persisted.wifi_ssid)     - 1);
+                strncpy(mgr->persisted.wifi_password, CONFIG_WIFI_PASSWORD,
+                        sizeof(mgr->persisted.wifi_password) - 1);
+                ESP_LOGW(TAG, "NVS config has incomplete WiFi credentials — "
+                              "restored compiled-in defaults (ssid='%s')", CONFIG_WIFI_SSID);
+            }
+            ESP_LOGI(TAG, "Config loaded from NVS (sample_rate=%.1f Hz, ssid='%s')",
+                     mgr->persisted.sample_rate_hz, mgr->persisted.wifi_ssid);
         }
-        ESP_LOGI(TAG, "Config loaded from NVS (sample_rate=%.1f Hz, ssid='%s')",
-                 mgr->persisted.sample_rate_hz, mgr->persisted.wifi_ssid);
     } else {
         ESP_LOGI(TAG, "No saved config found, using defaults");
     }
