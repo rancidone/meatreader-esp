@@ -6,12 +6,48 @@ declare const self: ServiceWorkerGlobalScope;
 const notified = new Set<string>();
 const channelTriggered = new Map<number, boolean>();
 
+const CACHE_NAME = 'meatreader-v1';
+// Endpoints to cache for offline display (network-first, then cache fallback)
+const CACHEABLE = ['/device', '/config'];
+
 self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  // Prune old caches on activation
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+
+// Network-first fetch handler for /device and /config
+self.addEventListener('fetch', (event: FetchEvent) => {
+  const url = new URL(event.request.url);
+  if (!CACHEABLE.some((p) => url.pathname.startsWith(p))) return;
+  if (event.request.method !== 'GET') return;
+
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          void caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      })
+      .catch(() =>
+        caches.match(event.request).then((cached) => {
+          if (cached) return cached;
+          return new Response(JSON.stringify({ error: 'offline' }), {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        })
+      )
+  );
 });
 
 interface ChannelSnapshot {

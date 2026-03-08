@@ -4,10 +4,18 @@
   import Calibration  from './views/Calibration.svelte';
   import Diagnostics  from './views/Diagnostics.svelte';
   import Profiles     from './views/Profiles.svelte';
+  import { tempsStore } from './lib/stores/temps.svelte.ts';
+  import { postSnapshotToSW } from './lib/sw-bridge.ts';
 
   type View = 'dashboard' | 'config' | 'calibration' | 'diagnostics' | 'profiles';
 
   let active = $state<View>('dashboard');
+
+  // Forward snapshots to service worker for background notifications
+  $effect(() => {
+    const snap = tempsStore.latest;
+    if (snap) void postSnapshotToSW(snap);
+  });
 
   // PWA install prompt
   let installPrompt = $state<Event & { prompt(): Promise<void> } | null>(null);
@@ -44,6 +52,12 @@
       {/each}
     </nav>
   </header>
+
+  {#if tempsStore.error}
+    <div class="offline-banner" role="alert">
+      <span>Device offline — {tempsStore.error}</span>
+    </div>
+  {/if}
 
   {#if installPrompt}
     <div class="install-banner">
@@ -125,6 +139,18 @@
   .tab.active {
     background: var(--color-surface-alt);
     color: var(--color-text);
+  }
+
+  /* ── Offline banner ─────────────────────────────────────────────────── */
+
+  .offline-banner {
+    display: flex;
+    align-items: center;
+    padding: 0.4rem 1.25rem;
+    background: color-mix(in srgb, var(--color-error) 20%, var(--color-surface));
+    border-bottom: 1px solid color-mix(in srgb, var(--color-error) 50%, transparent);
+    color: var(--color-error);
+    font-size: 0.8rem;
   }
 
   /* ── Install banner ─────────────────────────────────────────────────── */
