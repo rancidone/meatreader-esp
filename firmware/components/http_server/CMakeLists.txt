@@ -10,9 +10,11 @@ idf_component_register(
         "routes_alerts.c"
         "routes_events.c"
         "routes_profiles.c"
+        "routes_push.c"
     INCLUDE_DIRS "include"
     REQUIRES
         esp_http_server
+        esp_http_client
         json
         sensor_mgr
         config_mgr
@@ -21,5 +23,6 @@ idf_component_register(
         ref_sensor
         esp_timer
         esp_wifi
+        nvs_flash
         freertos
 )
