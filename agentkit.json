@@ -126,9 +126,26 @@
       "ctest"
     ],
     "soft_warning_thresholds": {
-      "max_output_lines": 240,
-      "max_read_kb": 160,
-      "warn_avg_tokens_per_tool_call": 3500
+      "max_output_lines": 120,
+      "max_read_kb": 64,
+      "warn_avg_tokens_per_tool_call": 25000
+    },
+    "strict_mode": {
+      "enabled": true,
+      "enforce_exit_nonzero": true,
+      "window_days": 7,
+      "max_total_tokens_window": 100000000,
+      "min_read_chunk_ratio_pct": 70,
+      "max_full_reads_window": 120,
+      "max_full_read_file_kb": 12,
+      "max_todowrite_calls_window": 40,
+      "require_non_null_tokens_per_completed_todo": true,
+      "worker_allowed_read_modes": [
+        "chunk",
+        "symbol"
+      ],
+      "planner_required_for_discovery": true,
+      "force_task_pack_before_worker": true
     }
   },
   "telemetry": {
