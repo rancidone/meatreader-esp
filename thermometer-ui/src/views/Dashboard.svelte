@@ -84,6 +84,7 @@
         unit={ui.unit}
         color={COLORS[idx]}
         label={configStore.status?.active.channels[idx]?.label}
+        channelIdx={idx}
         prediction={predictions.forChannel(idx)}
         onclick={() => chartOpen = true}
       />
