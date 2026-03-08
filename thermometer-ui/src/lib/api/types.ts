@@ -13,6 +13,8 @@ export interface ChannelReading {
   raw_adc?: number;
   resistance_ohms?: number;
   alert_triggered?: boolean;
+  stall_detected?: boolean;
+  stall_at?: number;  // ms since Unix epoch when stall was first detected
 }
 
 export interface Snapshot {
@@ -105,6 +107,23 @@ export interface CalibrationSession {
   channel: number;
   points: CalibrationPoint[];
 }
+
+// ── Cook Profiles ─────────────────────────────────────────────────────────────
+
+export interface Stage {
+  label: string;
+  target_temp_c: number;
+  alert_method: string;
+}
+
+export interface CookProfile {
+  name: string;
+  num_stages: number;
+  stages: Stage[];
+}
+
+// GET /profiles returns 8 slots; name="" means empty slot.
+export type ProfilesResponse = CookProfile[];
 
 // ── Error ────────────────────────────────────────────────────────────────────
 
