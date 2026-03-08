@@ -133,6 +133,7 @@ static inline cJSON *channel_reading_to_json(const channel_reading_t *ch,
     cJSON_AddNumberToObject(obj, "raw_adc",          ch->raw_adc);
     cJSON_AddNumberToObject(obj, "resistance_ohms",  ch->resistance_ohms);
     cJSON_AddStringToObject(obj, "quality",          quality_str);
+    cJSON_AddBoolToObject(obj,   "stall_detected",   ch->stall_detected);
     if (alert != NULL) {
         cJSON_AddBoolToObject(obj, "alert_triggered", alert->triggered);
     }
