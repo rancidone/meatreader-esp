@@ -104,5 +104,5 @@ export const api = { temps, status, device, config, calibration };
 export type { Snapshot, ChannelReading, StatusResponse, DeviceResponse,
               DeviceConfig, ChannelConfig, DeviceConfigPatch, ConfigStatus,
               SteinhartHartCoeffs, CalibrationLiveResponse, CalibrationSession,
-              CalibrationPoint } from './types.ts';
+              CalibrationPoint, Stage, CookProfile, ProfilesResponse } from './types.ts';
 export { ApiError } from './types.ts';
