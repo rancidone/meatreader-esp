@@ -2,6 +2,7 @@
   import { tempsStore }  from '../lib/stores/temps.svelte.ts';
   import { deviceStore } from '../lib/stores/device.svelte.ts';
   import { ui }          from '../lib/stores/ui.svelte.ts';
+  import { predictions } from '../lib/stores/predictions.svelte.ts';
   import { formatAge }   from '../lib/utils/format.ts';
   import ChannelCard     from '../lib/components/dashboard/ChannelCard.svelte';
   import ChartModal      from '../lib/components/dashboard/ChartModal.svelte';
@@ -79,6 +80,7 @@
         snapshots={tempsStore.history}
         unit={ui.unit}
         color={COLORS[idx]}
+        prediction={predictions.forChannel(idx)}
         onclick={() => chartOpen = true}
       />
     {/each}
