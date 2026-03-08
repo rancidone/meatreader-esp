@@ -6,10 +6,10 @@
 
 ### Cook profiles (firmware)
 
-- [ ] Add `cook_profile_t` struct to `config_mgr.h`: `name[32]`, `num_stages`, `stage_t stages[4]` (each stage: `target_temp_c`, `alert_method`, `label[32]`)
-- [ ] Add `cook_profiles_t profiles[8]` to `device_config_t` (NVS blob; bump `schema_version`)
-- [ ] Create `GET /profiles`, `PUT /profiles/{id}`, `DELETE /profiles/{id}` routes in new `routes_profiles.c`
-- [ ] Register routes in `http_server.c`
+- [x] Add `cook_profile_t` struct to `config_mgr.h`: `name[32]`, `num_stages`, `stage_t stages[4]` (each stage: `target_temp_c`, `alert_method`, `label[32]`)
+- [x] Add `cook_profiles_t profiles[8]` to `device_config_t` (NVS blob; bump `schema_version`)
+- [x] Create `GET /profiles`, `PUT /profiles/{id}`, `DELETE /profiles/{id}` routes in new `routes_profiles.c`
+- [x] Register routes in `http_server.c`
 
 ### Stall detection (firmware)
 
