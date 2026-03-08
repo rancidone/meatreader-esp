@@ -115,7 +115,9 @@ static inline int query_param_int(httpd_req_t *req, const char *key, int default
 #include "config_mgr.h"
 #include "calibration.h"
 
-static inline cJSON *channel_reading_to_json(const channel_reading_t *ch)
+// alert may be NULL — if non-NULL, "alert_triggered" is included in the object.
+static inline cJSON *channel_reading_to_json(const channel_reading_t *ch,
+                                              const channel_alert_t *alert)
 {
     const char *quality_str;
     switch (ch->quality) {
@@ -131,17 +133,24 @@ static inline cJSON *channel_reading_to_json(const channel_reading_t *ch)
     cJSON_AddNumberToObject(obj, "raw_adc",          ch->raw_adc);
     cJSON_AddNumberToObject(obj, "resistance_ohms",  ch->resistance_ohms);
     cJSON_AddStringToObject(obj, "quality",          quality_str);
+    if (alert != NULL) {
+        cJSON_AddBoolToObject(obj, "alert_triggered", alert->triggered);
+    }
     return obj;
 }
 
-static inline cJSON *snapshot_to_json(const sensor_snapshot_t *snap)
+// alerts is an optional array of CONFIG_NUM_CHANNELS channel_alert_t entries.
+// Pass NULL to omit "alert_triggered" from channel objects.
+static inline cJSON *snapshot_to_json(const sensor_snapshot_t *snap,
+                                       const channel_alert_t *alerts)
 {
     cJSON *obj      = cJSON_CreateObject();
     cJSON *channels = cJSON_CreateArray();
 
     cJSON_AddNumberToObject(obj, "timestamp", (double)snap->timestamp_ms);
     for (int i = 0; i < CONFIG_NUM_CHANNELS; i++) {
-        cJSON_AddItemToArray(channels, channel_reading_to_json(&snap->channels[i]));
+        const channel_alert_t *alert = alerts ? &alerts[i] : NULL;
+        cJSON_AddItemToArray(channels, channel_reading_to_json(&snap->channels[i], alert));
     }
     cJSON_AddItemToObject(obj, "channels", channels);
     return obj;

@@ -5,6 +5,7 @@
 #include "config_mgr.h"
 #include "calibration.h"
 #include "ref_sensor.h"
+#include "alert_mgr.h"
 
 #define FIRMWARE_VERSION  "esp-idf-rev1"
 
@@ -14,6 +15,7 @@ typedef struct {
     config_mgr_t      *config;
     calibration_mgr_t *calibration;  // NULL in provisioning mode
     ds18b20_handle_t   ds18;         // NULL if DS18B20 not available
+    alert_mgr_t       *alert_mgr;    // NULL in provisioning mode
     bool               provisioning; // true when running in SoftAP/captive-portal mode
 } http_app_ctx_t;
 

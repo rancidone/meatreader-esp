@@ -74,8 +74,9 @@ export interface DeviceConfig {
 }
 
 // Partial patch body for PATCH /config/staged.
-export type DeviceConfigPatch = Partial<Omit<DeviceConfig, 'channels'>> & {
+export type DeviceConfigPatch = Partial<Omit<DeviceConfig, 'channels' | 'alerts'>> & {
   channels?: ChannelConfig[];
+  alerts?: AlertConfig[];
 };
 
 export interface ConfigStatus {

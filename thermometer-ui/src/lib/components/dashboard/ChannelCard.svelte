@@ -18,11 +18,16 @@
 <div class="card channel-card">
   <div class="card-header">
     <h2>Channel {reading?.id ?? '—'}</h2>
-    {#if reading}
-      <QualityBadge quality={reading.quality} />
-    {:else}
-      <span class="badge disabled">—</span>
-    {/if}
+    <div class="badge-group">
+      {#if reading?.alert_triggered === true}
+        <span class="alert-badge">Alert!</span>
+      {/if}
+      {#if reading}
+        <QualityBadge quality={reading.quality} />
+      {:else}
+        <span class="badge disabled">—</span>
+      {/if}
+    </div>
   </div>
 
   <div class="temp" style="color: {reading?.quality === 'ok' ? color : 'var(--color-text-muted)'}">
@@ -66,6 +71,27 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+  }
+
+  .badge-group {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-xs);
+  }
+
+  .alert-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2em;
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--color-error) 15%, var(--color-surface-alt));
+    border: 1px solid var(--color-error);
+    color: var(--color-error);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
   }
 
   .temp {
