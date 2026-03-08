@@ -10,14 +10,92 @@
   "index": {
     "exclude_paths": [
       ".claude/worktrees",
+      ".claude/debug",
+      ".claude/file-history",
       "firmware/build",
+      "firmware/.direnv",
+      "firmware/managed_components",
+      "firmware/build",
+      "firmware/.cache",
+      "firmware/.pytest_cache",
+      "thermometer-ui/dist",
+      "thermometer-ui/.svelte-kit",
       "thermometer-ui/node_modules"
-    ]
+    ],
+    "max_file_bytes": 180000
   },
   "context": {
     "default_token_budget": 2800,
     "max_files_per_pack": 12,
-    "max_tests_per_pack": 5
+    "max_tests_per_pack": 5,
+    "prefer_symbol_blocks": true,
+    "max_snippets_total": 20,
+    "max_snippets_per_file": 3
+  },
+  "extract": {
+    "enabled": true,
+    "max_file_bytes": 180000,
+    "languages": {
+      "c": "regex-c",
+      "h": "regex-c",
+      "cpp": "regex-c",
+      "cc": "regex-c",
+      "ts": "regex-ts",
+      "js": "regex-ts",
+      "py": "regex-py",
+      "svelte": "regex-ts"
+    },
+    "adapters": [
+      {
+        "type": "builtin",
+        "name": "esp-idf-http-routes",
+        "include_ext": [
+          "c",
+          "h"
+        ],
+        "include_paths": [
+          "firmware/components/http_server/"
+        ]
+      },
+      {
+        "type": "builtin",
+        "name": "svelte-live-api",
+        "include_ext": [
+          "ts",
+          "svelte"
+        ],
+        "include_paths": [
+          "thermometer-ui/src/lib/api/",
+          "thermometer-ui/src/lib/stores/"
+        ]
+      },
+      {
+        "type": "builtin",
+        "name": "typescript-stores",
+        "include_ext": [
+          "ts"
+        ],
+        "include_paths": [
+          "thermometer-ui/src/lib/stores/"
+        ]
+      },
+      {
+        "type": "python",
+        "name": "meatreader-custom",
+        "file": "agentkit-adapters/meatreader_adapter.py",
+        "function": "extract",
+        "include_ext": [
+          "c",
+          "h",
+          "ts",
+          "svelte"
+        ],
+        "include_paths": [
+          "firmware/components/http_server/",
+          "thermometer-ui/src/"
+        ]
+      }
+    ]
   },
   "test_hints": {
     "firmware": "cd firmware/tests && cmake -B build && cmake --build build && ctest --test-dir build",
