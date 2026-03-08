@@ -5,6 +5,7 @@ idf_component_register(
         "routes_config.c"
         "routes_calibration.c"
         "routes_status.c"
+        "routes_metrics.c"
     INCLUDE_DIRS "include"
     REQUIRES
         esp_http_server
@@ -14,5 +15,6 @@ idf_component_register(
         calibration
         ref_sensor
         esp_timer
+        esp_wifi
         freertos
 )

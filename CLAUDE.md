@@ -76,3 +76,39 @@ npm run build
 ```
 
 To target a real device, update proxy in `vite.config.ts`.
+
+## Testing
+
+### Firmware — host-side unit tests (no ESP-IDF required)
+
+```bash
+cd firmware/tests && cmake -B build && cmake --build build && ctest --test-dir build
+```
+
+Tests live in `firmware/tests/therm_math/test_therm_math.c` and link only against `therm_math.c` + libm. No device needed.
+
+### Web UI — Vitest
+
+```bash
+cd thermometer-ui
+npm run test          # run once
+npm run test:watch    # watch mode
+npm run test:ui       # browser UI
+```
+
+Test files follow the `src/**/*.test.ts` pattern.
+
+## Observability
+
+Prometheus metrics are exposed at `GET /metrics` (Content-Type: `text/plain; version=0.0.4`).
+
+Example `scrape_configs` entry:
+
+```yaml
+scrape_configs:
+  - job_name: meatreader
+    static_configs:
+      - targets: ['<device-ip>:80']
+```
+
+Metrics: `meatreader_temperature_celsius`, `meatreader_resistance_ohms`, `meatreader_adc_raw`, `meatreader_wifi_rssi_dbm`, `meatreader_uptime_seconds`, `meatreader_channel_quality`.
