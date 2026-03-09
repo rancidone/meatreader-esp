@@ -3,6 +3,7 @@
 #include "esp_netif.h"
 #include "esp_event.h"
 #include "esp_log.h"
+#include "esp_ota_ops.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "freertos/task.h"
@@ -131,6 +132,10 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
         s_connected   = true;
         s_retry_count = 0;
         ESP_LOGI(TAG, "Got IP: %s", s_ip_str);
+        // Mark this firmware as valid — cancels automatic OTA rollback.
+        // If a new firmware never reaches this point (WiFi connect), the
+        // bootloader will roll back to the previous partition on next reset.
+        esp_ota_mark_app_valid_cancel_rollback();
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
     }
 }

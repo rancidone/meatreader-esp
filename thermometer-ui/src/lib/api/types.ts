@@ -39,6 +39,7 @@ export interface StatusResponse {
 export interface DeviceResponse {
   platform: string;
   firmware: string;
+  firmware_version: string;   // from esp_app_description_t.version (PROJECT_VER)
   channels: number;
 }
 

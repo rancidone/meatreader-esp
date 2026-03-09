@@ -4,6 +4,7 @@
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "esp_wifi.h"
+#include "esp_app_desc.h"
 
 static const char *TAG = "route_status";
 
@@ -73,9 +74,15 @@ esp_err_t handle_status(httpd_req_t *req)
 // Returns static device metadata.
 esp_err_t handle_device(httpd_req_t *req)
 {
+    const esp_app_desc_t *app_desc = esp_app_get_description();
+    const char *fw_version = (app_desc && app_desc->version[0])
+                             ? app_desc->version
+                             : FIRMWARE_VERSION;
+
     cJSON *obj = cJSON_CreateObject();
-    cJSON_AddStringToObject(obj, "platform",  "esp32");
-    cJSON_AddStringToObject(obj, "firmware",  FIRMWARE_VERSION);
-    cJSON_AddNumberToObject(obj, "channels",  CONFIG_NUM_CHANNELS);
+    cJSON_AddStringToObject(obj, "platform",         "esp32");
+    cJSON_AddStringToObject(obj, "firmware",         FIRMWARE_VERSION);
+    cJSON_AddStringToObject(obj, "firmware_version", fw_version);
+    cJSON_AddNumberToObject(obj, "channels",         CONFIG_NUM_CHANNELS);
     return send_json(req, obj, 200);
 }
