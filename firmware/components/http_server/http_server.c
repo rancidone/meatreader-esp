@@ -34,6 +34,8 @@ esp_err_t handle_profiles_put(httpd_req_t *req);
 esp_err_t handle_profiles_delete(httpd_req_t *req);
 esp_err_t handle_push_subscription(httpd_req_t *req);
 esp_err_t handle_push_notify(httpd_req_t *req);
+esp_err_t handle_ota_upload(httpd_req_t *req);
+esp_err_t handle_ota_rollback(httpd_req_t *req);
 
 // Forward declarations — provisioning routes (routes_provision.c)
 esp_err_t handle_provision_root(httpd_req_t *req);
@@ -76,6 +78,9 @@ static const httpd_uri_t s_normal_uris[] = {
     // Web Push relay
     { .uri = "/push/subscription",         .method = HTTP_POST,   .handler = handle_push_subscription },
     { .uri = "/push/notify",               .method = HTTP_POST,   .handler = handle_push_notify       },
+    // OTA firmware update
+    { .uri = "/ota",                       .method = HTTP_POST,   .handler = handle_ota_upload        },
+    { .uri = "/ota/rollback",              .method = HTTP_POST,   .handler = handle_ota_rollback      },
 };
 
 #define NUM_NORMAL_URIS  (sizeof(s_normal_uris) / sizeof(s_normal_uris[0]))
@@ -109,7 +114,7 @@ esp_err_t http_server_start(const http_app_ctx_t *ctx)
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.server_port      = 80;
     config.max_uri_handlers = num_uris + 2;
-    config.stack_size       = 8192;
+    config.stack_size       = 16384;  // increased for OTA streaming handler
     config.uri_match_fn     = httpd_uri_match_wildcard;
 
     esp_err_t err = httpd_start(&s_server, &config);

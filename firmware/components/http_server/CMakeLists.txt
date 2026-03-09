@@ -11,6 +11,7 @@ idf_component_register(
         "routes_events.c"
         "routes_profiles.c"
         "routes_push.c"
+        "routes_ota.c"
     INCLUDE_DIRS "include"
     REQUIRES
         esp_http_server
@@ -24,5 +25,6 @@ idf_component_register(
         esp_timer
         esp_wifi
         nvs_flash
+        app_update
         freertos
 )
