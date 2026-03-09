@@ -1,5 +1,9 @@
 // routes_ota.c — OTA firmware update endpoints
 //
+// register_ota_routes() is provided for callers that use a register-per-module
+// pattern. The actual URI entries are registered via the http_server URI table;
+// this function is a lifecycle hook that returns ESP_OK immediately.
+//
 //   POST /ota
 //     Receives a raw .bin firmware image as the request body.
 //     Writes it to the inactive OTA partition, then sets it as the boot
@@ -13,6 +17,7 @@
 //     Marks the currently running partition as invalid and reboots to the
 //     previous partition (must have been a valid OTA partition).
 
+#include "routes_ota.h"
 #include "http_util.h"
 #include "esp_ota_ops.h"
 #include "esp_app_format.h"
@@ -169,4 +174,14 @@ esp_err_t handle_ota_rollback(httpd_req_t *req)
     esp_ota_mark_app_invalid_rollback_and_reboot();
 
     return ESP_OK;  // unreachable
+}
+
+// register_ota_routes — lifecycle hook for callers using a per-module
+// registration pattern. OTA URI entries are already included in the central
+// URI table in http_server.c, so no additional httpd_register_uri_handler
+// calls are needed here.
+esp_err_t register_ota_routes(httpd_handle_t server)
+{
+    (void)server;
+    return ESP_OK;
 }
