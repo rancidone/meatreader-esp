@@ -8,3 +8,5 @@ set(PROJECT_VER "0.5.0")
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(meatreader)
+
+spiffs_create_partition_image(storage ../thermometer-ui/dist FLASH_IN_PROJECT)
