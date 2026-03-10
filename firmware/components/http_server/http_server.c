@@ -1,6 +1,7 @@
 // HTTP server lifecycle and URI handler registration.
 
 #include "http_server.h"
+#include "routes_static.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
 #include <string.h>
@@ -96,7 +97,7 @@ esp_err_t http_server_start(const http_app_ctx_t *ctx)
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.server_port      = 80;
-    config.max_uri_handlers = num_uris + 2;
+    config.max_uri_handlers = num_uris + 3;  // +1 for static catch-all
     config.stack_size       = 8192;
     config.uri_match_fn     = httpd_uri_match_wildcard;
 
@@ -111,6 +112,18 @@ esp_err_t http_server_start(const http_app_ctx_t *ctx)
         httpd_uri_t uri = uris[i];
         uri.user_ctx = &s_ctx;
         httpd_register_uri_handler(s_server, &uri);
+    }
+
+    // Register static file catch-all last (normal mode only) so it doesn't
+    // shadow API routes.  The wildcard match_fn is already set above.
+    if (!ctx->provisioning) {
+        httpd_uri_t static_uri = {
+            .uri      = "/*",
+            .method   = HTTP_GET,
+            .handler  = routes_static_handler,
+            .user_ctx = NULL,
+        };
+        httpd_register_uri_handler(s_server, &static_uri);
     }
 
     ESP_LOGI(TAG, "HTTP server started (%d routes, %s mode)",

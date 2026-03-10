@@ -9,6 +9,7 @@ idf_component_register(
         "routes_provision.c"
         "routes_alerts.c"
         "routes_events.c"
+        "routes_static.c"
     INCLUDE_DIRS "include"
     REQUIRES
         esp_http_server
@@ -21,4 +22,6 @@ idf_component_register(
         esp_timer
         esp_wifi
         freertos
+        spiffs
+        esp_vfs
 )

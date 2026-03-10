@@ -19,6 +19,7 @@
 #include "esp_netif.h"
 #include "esp_event.h"
 #include "esp_log.h"
+#include "esp_spiffs.h"
 
 #include "board.h"
 #include "i2c_manager.h"
@@ -49,6 +50,18 @@ void app_main(void)
         err = nvs_flash_init();
     }
     ESP_ERROR_CHECK(err);
+
+    // ── SPIFFS ────────────────────────────────────────────────────────────
+    esp_vfs_spiffs_conf_t spiffs_conf = {
+        .base_path             = "/spiffs",
+        .partition_label       = "storage",
+        .max_files             = 10,
+        .format_if_mount_failed = false,
+    };
+    esp_err_t spiffs_ret = esp_vfs_spiffs_register(&spiffs_conf);
+    if (spiffs_ret != ESP_OK) {
+        ESP_LOGW(TAG, "SPIFFS mount failed (%s) — static UI unavailable", esp_err_to_name(spiffs_ret));
+    }
 
     // ── Networking init (required before WiFi) ────────────────────────────
     ESP_ERROR_CHECK(esp_netif_init());
