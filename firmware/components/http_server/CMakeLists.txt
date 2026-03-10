@@ -12,6 +12,7 @@ idf_component_register(
         "routes_profiles.c"
         "routes_push.c"
         "routes_ota.c"
+        "routes_static.c"
     INCLUDE_DIRS "include"
     REQUIRES
         esp_http_server
@@ -27,4 +28,6 @@ idf_component_register(
         nvs_flash
         app_update
         freertos
+        spiffs
+        esp_vfs
 )

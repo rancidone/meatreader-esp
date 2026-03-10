@@ -2,6 +2,7 @@
 
 #include "http_server.h"
 #include "routes_ota.h"
+#include "routes_static.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
 #include <string.h>
@@ -114,7 +115,7 @@ esp_err_t http_server_start(const http_app_ctx_t *ctx)
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.server_port      = 80;
-    config.max_uri_handlers = num_uris + 2;
+    config.max_uri_handlers = num_uris + 3;  // +1 for OTA routes, +1 for static catch-all
     config.stack_size       = 16384;  // increased for OTA streaming handler
     config.uri_match_fn     = httpd_uri_match_wildcard;
     config.recv_wait_timeout = 30;
@@ -135,6 +136,15 @@ esp_err_t http_server_start(const http_app_ctx_t *ctx)
 
     if (!ctx->provisioning) {
         register_ota_routes(s_server);
+
+        // Register static file catch-all last so it doesn't shadow API routes.
+        httpd_uri_t static_uri = {
+            .uri      = "/*",
+            .method   = HTTP_GET,
+            .handler  = routes_static_handler,
+            .user_ctx = NULL,
+        };
+        httpd_register_uri_handler(s_server, &static_uri);
     }
 
     ESP_LOGI(TAG, "HTTP server started (%d routes, %s mode)",
