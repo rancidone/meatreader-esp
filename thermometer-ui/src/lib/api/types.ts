@@ -39,7 +39,7 @@ export interface StatusResponse {
 export interface DeviceResponse {
   platform: string;
   firmware: string;
-  firmware_version: string;   // from esp_app_description_t.version (PROJECT_VER)
+  firmware_version?: string;  // from esp_app_description_t.version (PROJECT_VER)
   channels: number;
 }
 
@@ -125,6 +125,14 @@ export interface CookProfile {
 
 // GET /profiles returns 8 slots; name="" means empty slot.
 export type ProfilesResponse = CookProfile[];
+
+// ── OTA ──────────────────────────────────────────────────────────────────────
+
+export interface OtaRollbackResponse {
+  status: string;
+  message: string;
+}
+
 
 // ── Error ────────────────────────────────────────────────────────────────────
 

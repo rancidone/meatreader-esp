@@ -11,6 +11,7 @@ import {
   type DeviceConfig,
   type DeviceConfigPatch,
   type DeviceResponse,
+  type OtaRollbackResponse,
   type Snapshot,
   type SteinhartHartCoeffs,
   type StatusResponse,
@@ -97,12 +98,20 @@ export const calibration = {
     post<{ status: string; message: string }>(`/calibration/accept?ch=${ch}`),
 };
 
+// ── OTA ──────────────────────────────────────────────────────────────────────
+
+export const ota = {
+  rollback: () =>
+    post<OtaRollbackResponse>('/ota/rollback'),
+};
+
 // Convenience re-export for callers that want everything under one import.
-export const api = { temps, status, device, config, calibration };
+export const api = { temps, status, device, config, calibration, ota };
 
 // Re-export types so consumers can import from one place.
 export type { Snapshot, ChannelReading, StatusResponse, DeviceResponse,
               DeviceConfig, ChannelConfig, DeviceConfigPatch, ConfigStatus,
               SteinhartHartCoeffs, CalibrationLiveResponse, CalibrationSession,
-              CalibrationPoint, Stage, CookProfile, ProfilesResponse } from './types.ts';
+              CalibrationPoint, Stage, CookProfile, ProfilesResponse,
+              OtaRollbackResponse } from './types.ts';
 export { ApiError } from './types.ts';
