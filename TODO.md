@@ -71,29 +71,29 @@
 
 ### Firmware
 
-- [ ] Verify `partitions.csv` (or default partition table) has two OTA app partitions (`ota_0`, `ota_1`) and an `otadata` partition — if using default 4MB table, switch to `CONFIG_PARTITION_TABLE_TWO_OTA` in `sdkconfig`
-- [ ] Create `firmware/components/http_server/routes_ota.c`:
+- [x] Verify `partitions.csv` (or default partition table) has two OTA app partitions (`ota_0`, `ota_1`) and an `otadata` partition — if using default 4MB table, switch to `CONFIG_PARTITION_TABLE_TWO_OTA` in `sdkconfig`
+- [x] Create `firmware/components/http_server/routes_ota.c`:
   - `POST /ota` handler: receives multipart or raw binary body via `httpd_req_recv` in a loop
   - Write chunks to OTA partition via `esp_ota_begin` / `esp_ota_write` / `esp_ota_end`
   - On success: `esp_ota_set_boot_partition` + `esp_restart()`
   - On failure: return error JSON; running partition is unchanged
   - Reject if uploaded image is smaller than minimum viable size (sanity check)
-- [ ] Register `/ota` in `http_server.c`; increase `httpd_config_t` recv buffer for large uploads
-- [ ] Add `POST /ota/rollback` route: calls `esp_ota_mark_app_invalid_rollback_and_reboot()` to revert to previous partition
-- [ ] Add firmware version string to `GET /device` response: populate from `esp_app_get_description()->version` (set via `project_ver` in `CMakeLists.txt`)
-- [ ] Mark app valid after successful boot + WiFi connect: call `esp_ota_mark_app_valid_cancel_rollback()` in `wifi_mgr` on successful connection (enables automatic rollback if new firmware never connects)
+- [x] Register `/ota` in `http_server.c`; increase `httpd_config_t` recv buffer for large uploads
+- [x] Add `POST /ota/rollback` route: calls `esp_ota_mark_app_invalid_rollback_and_reboot()` to revert to previous partition
+- [x] Add firmware version string to `GET /device` response: populate from `esp_app_get_description()->version` (set via `project_ver` in `CMakeLists.txt`)
+- [x] Mark app valid after successful boot + WiFi connect: call `esp_ota_mark_app_valid_cancel_rollback()` in `wifi_mgr` on successful connection (enables automatic rollback if new firmware never connects)
 
 ### UI
 
-- [ ] Add `firmware_version` to `DeviceInfo` type in `types.ts`
-- [ ] Create `src/views/Firmware.svelte`:
+- [x] Add `firmware_version` to `DeviceInfo` type in `types.ts`
+- [x] Create `src/views/Firmware.svelte`:
   - Display current firmware version from `/device`
   - File picker (`.bin`) with drag-and-drop zone
   - Upload progress bar (track `xhr.upload.onprogress` or `fetch` with `ReadableStream`)
   - "Uploading… Flashing… Rebooting…" state machine with polling `/device` until device comes back online
   - "Rollback" button (calls `POST /ota/rollback`) shown only when a previous partition exists
-- [ ] Add Firmware link to nav
-- [ ] Add warning modal: "This will restart the device. Active cook data will be preserved in NVS."
+- [x] Add Firmware link to nav
+- [x] Add warning modal: "This will restart the device. Active cook data will be preserved in NVS."
 
 ---
 
