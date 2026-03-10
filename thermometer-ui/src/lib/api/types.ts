@@ -37,6 +37,7 @@ export interface StatusResponse {
 export interface DeviceResponse {
   platform: string;
   firmware: string;
+  firmware_version?: string;
   channels: number;
 }
 
@@ -104,6 +105,13 @@ export interface CalibrationPoint {
 export interface CalibrationSession {
   channel: number;
   points: CalibrationPoint[];
+}
+
+// ── OTA ──────────────────────────────────────────────────────────────────────
+
+export interface OtaRollbackResponse {
+  status: string;
+  message: string;
 }
 
 // ── Error ────────────────────────────────────────────────────────────────────
