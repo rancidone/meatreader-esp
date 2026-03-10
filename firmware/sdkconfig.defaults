@@ -22,6 +22,11 @@ CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM=32
 # NVS
 CONFIG_NVS_ASSERT_ERROR_CHECK=y
 
-# OTA — two-partition scheme (ota_0 + ota_1, no factory)
-CONFIG_PARTITION_TABLE_TWO_OTA=y
+# Flash — 4 MB part required for dual OTA partitions
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_ESPTOOLPY_FLASHSIZE="4MB"
+
+# OTA — custom partition table with ota_0, ota_1, otadata, storage
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
 CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y

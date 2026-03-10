@@ -1,6 +1,7 @@
 // HTTP server lifecycle and URI handler registration.
 
 #include "http_server.h"
+#include "routes_ota.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
 #include <string.h>
@@ -116,6 +117,8 @@ esp_err_t http_server_start(const http_app_ctx_t *ctx)
     config.max_uri_handlers = num_uris + 2;
     config.stack_size       = 16384;  // increased for OTA streaming handler
     config.uri_match_fn     = httpd_uri_match_wildcard;
+    config.recv_wait_timeout = 30;
+    config.send_wait_timeout = 30;
 
     esp_err_t err = httpd_start(&s_server, &config);
     if (err != ESP_OK) {
@@ -128,6 +131,10 @@ esp_err_t http_server_start(const http_app_ctx_t *ctx)
         httpd_uri_t uri = uris[i];
         uri.user_ctx = &s_ctx;
         httpd_register_uri_handler(s_server, &uri);
+    }
+
+    if (!ctx->provisioning) {
+        register_ota_routes(s_server);
     }
 
     ESP_LOGI(TAG, "HTTP server started (%d routes, %s mode)",
