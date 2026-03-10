@@ -97,6 +97,35 @@
 
 ---
 
+## Phase 7: Serve Web UI from ESP32
+
+The built Svelte UI (`thermometer-ui/dist/`) is served directly from the ESP32 over SPIFFS, so the device is fully self-contained — no separate dev server needed.
+
+### Firmware
+
+- [ ] Confirm `storage` SPIFFS partition exists in `partitions.csv` (added in Phase 6); ensure size is ≥ 512 KB to hold the built UI assets
+- [ ] Add `esp_vfs_spiffs_register` call in `main.c` (after NVS init, before HTTP server): mount SPIFFS at `/spiffs` with `base_path="/spiffs"`, `partition_label="storage"`
+- [ ] Create `firmware/components/http_server/routes_static.c`:
+  - Catch-all URI handler (`/*`) registered last — reads file from `/spiffs` path, streams it via `httpd_resp_send_chunk`
+  - Map extensions to `Content-Type`: `.html` → `text/html`, `.js` → `application/javascript`, `.css` → `text/css`, `.webmanifest` → `application/manifest+json`, `.png` → `image/png`, `.svg` → `image/svg+xml`
+  - SPA fallback: if requested path not found in SPIFFS, serve `/spiffs/index.html` (handles client-side routing)
+  - Set `Cache-Control: max-age=31536000, immutable` for hashed assets (`/assets/`), `no-cache` for `index.html`
+- [ ] Register static route in `http_server.c` (must be last, after all API routes)
+- [ ] Add `spiffs` to `REQUIRES` in `http_server/CMakeLists.txt`; add `routes_static.c` to SRCS
+
+### Build pipeline
+
+- [ ] Add `spiffs_image` target to `firmware/CMakeLists.txt` using ESP-IDF's `spiffs_create_partition_image` cmake function — auto-runs `spiffsgen.py` against `thermometer-ui/dist/` and embeds image at flash time
+- [ ] Update Vite config (`thermometer-ui/vite.config.ts`): set `base: '/'` (already default), ensure all assets land in `dist/assets/` with content hashes — confirm with `npm run build`
+- [ ] Add combined build script `build-all.sh` (or Makefile target): `npm run build` in `thermometer-ui/`, then `idf.py build flash` in `firmware/` — single command to ship both
+
+### Developer experience
+
+- [ ] Keep `npm run dev` proxy workflow intact (vite proxy to `localhost:8080`) so local dev still works without flashing
+- [ ] Document the production flash flow in `README.md`: install ESP-IDF, `source export.sh`, `./build-all.sh`
+
+---
+
 ## Future: Home Assistant Integration
 
 *Not yet prioritized — implement once HA is available for testing.*
