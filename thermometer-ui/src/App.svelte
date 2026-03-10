@@ -4,10 +4,11 @@
   import Calibration  from './views/Calibration.svelte';
   import Diagnostics  from './views/Diagnostics.svelte';
   import Profiles     from './views/Profiles.svelte';
+  import Firmware     from './views/Firmware.svelte';
   import { tempsStore } from './lib/stores/temps.svelte.ts';
   import { postSnapshotToSW } from './lib/sw-bridge.ts';
 
-  type View = 'dashboard' | 'config' | 'calibration' | 'diagnostics' | 'profiles';
+  type View = 'dashboard' | 'config' | 'calibration' | 'diagnostics' | 'profiles' | 'firmware';
 
   let active = $state<View>('dashboard');
 
@@ -36,6 +37,7 @@
     { id: 'config',      label: 'Config'      },
     { id: 'calibration', label: 'Calibration' },
     { id: 'diagnostics', label: 'Diagnostics' },
+    { id: 'firmware',    label: 'Firmware'    },
   ];
 </script>
 
@@ -80,6 +82,8 @@
       <Diagnostics />
     {:else if active === 'profiles'}
       <Profiles />
+    {:else if active === 'firmware'}
+      <Firmware />
     {/if}
   </main>
 </div>
