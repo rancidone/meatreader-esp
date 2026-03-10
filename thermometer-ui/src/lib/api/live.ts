@@ -64,7 +64,7 @@ export function connectSSE(callbacks: SSECallbacks): SSEHandle {
 
 // Re-export everything that other modules (config, calibration, device stores)
 // import from this file, so they don't need to change their import paths.
-export { temps, status, device, config, calibration, api, ApiError } from './client.ts';
+export { temps, status, device, config, calibration, ota, api, ApiError } from './client.ts';
 export type {
   Snapshot,
   ChannelReading,
@@ -78,4 +78,5 @@ export type {
   CalibrationLiveResponse,
   CalibrationSession,
   CalibrationPoint,
+  OtaRollbackResponse,
 } from './client.ts';

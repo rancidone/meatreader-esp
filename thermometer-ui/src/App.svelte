@@ -3,8 +3,9 @@
   import Config       from './views/Config.svelte';
   import Calibration  from './views/Calibration.svelte';
   import Diagnostics  from './views/Diagnostics.svelte';
+  import Firmware     from './views/Firmware.svelte';
 
-  type View = 'dashboard' | 'config' | 'calibration' | 'diagnostics';
+  type View = 'dashboard' | 'config' | 'calibration' | 'diagnostics' | 'firmware';
 
   let active = $state<View>('dashboard');
 
@@ -13,6 +14,7 @@
     { id: 'config',      label: 'Config'      },
     { id: 'calibration', label: 'Calibration' },
     { id: 'diagnostics', label: 'Diagnostics' },
+    { id: 'firmware',    label: 'Firmware'    },
   ];
 </script>
 
@@ -39,6 +41,8 @@
       <Calibration />
     {:else if active === 'diagnostics'}
       <Diagnostics />
+    {:else if active === 'firmware'}
+      <Firmware />
     {/if}
   </main>
 </div>
