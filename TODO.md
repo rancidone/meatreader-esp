@@ -1,5 +1,39 @@
 # Meatreader ESP32 — Implementation TODO
 
+# TODO: VFS Migration to ESP-IDF 5.5.3 (Phased)
+
+## Phase 1: Baseline Alignment
+- [ ] Update IDF baseline to `v5.5.3` in startup/tooling scripts.
+- [ ] Update docs to state `ESP-IDF v5.5.3` as required version.
+- [ ] Regenerate/refresh `firmware/dependencies.lock` so `idf.version = 5.5.3`.
+- [ ] Confirm clean configure/build uses `IDF_VER="v5.5.3"`.
+
+## Phase 2: Storage/VFS Refactor (No Behavior Change)
+- [ ] Extract SPIFFS mount logic from `app_main` into a storage module.
+- [ ] Add internal lifecycle API:
+  - [ ] `storage_fs_init()`
+  - [ ] `storage_fs_deinit()`
+- [ ] Keep existing mount settings unchanged (`/spiffs`, `storage`, `max_files`).
+- [ ] Continue using public SPIFFS API (`esp_vfs_spiffs_register`) as the supported current-path integration.
+
+## Phase 3: Reliability and Visibility
+- [ ] Add mount outcome logging with explicit error classification.
+- [ ] Log SPIFFS usage/capacity on successful mount (`esp_spiffs_info`).
+- [ ] Add mounted-state check before static route file serving.
+- [ ] Preserve current fallback behavior when SPIFFS is unavailable.
+
+## Phase 4: Validation and Acceptance
+- [ ] Run `idf.py fullclean build` on 5.5.3 and require success.
+- [ ] Run existing host/unit tests in `firmware/tests` and require pass.
+- [ ] Verify logs show mount success/failure clearly.
+- [ ] Verify static assets still resolve from `/spiffs` and APIs remain functional if mount fails.
+
+## Done Criteria
+- [ ] Project builds on ESP-IDF 5.5.3.
+- [ ] No external HTTP API changes.
+- [ ] No partition-table changes.
+- [ ] Runtime behavior unchanged except clearer storage diagnostics.
+
 ---
 
 ## Done
