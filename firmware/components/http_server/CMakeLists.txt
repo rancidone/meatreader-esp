@@ -30,4 +30,5 @@ idf_component_register(
         freertos
         spiffs
         vfs
+        storage
 )
