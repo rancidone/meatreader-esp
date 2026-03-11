@@ -62,6 +62,9 @@ node_modules/
 # Claude
 .claude/
 
+# Agentkit runtime (tmp files, worker scratch)
+.agentkit/tmp/
+
 # ESP-IDF
 build/
 sdkconfig
@@ -96,3 +99,6 @@ __pycache__/
 *.pyo
 *.pyd
 .pytest_cache/
+
+# Local dev tooling (not project files)
+Justfile
