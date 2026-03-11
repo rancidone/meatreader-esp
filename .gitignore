@@ -70,6 +70,7 @@ managed_components/
 
 # direnv
 .direnv/
+.envrc
 
 ### Cpp
 # test output & cache
