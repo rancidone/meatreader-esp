@@ -11,7 +11,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FIRMWARE_DIR="$REPO_ROOT/firmware"
 UI_DIR="$REPO_ROOT/thermometer-ui"
 IDF_PATH_DEFAULT="/opt/esp-idf"
-IDF_VERSION_DEFAULT="v5.2.2"
+IDF_VERSION_DEFAULT="v5.5.3"
 IDF_TARGET_DEFAULT="esp32"
 IDF_REPO_URL="https://github.com/espressif/esp-idf.git"
 
