@@ -3,13 +3,13 @@
 ## Repository layout
 
 ```
-firmware/          — ESP-IDF 5.1+ C firmware (primary codebase)
+firmware/          — ESP-IDF v5.5.3 C firmware (primary codebase)
 thermometer-ui/    — Svelte 5 + TypeScript web UI
 ```
 
 ## Firmware (ESP-IDF)
 
-Requires ESP-IDF 5.1+ (`source $IDF_PATH/export.sh`). Uses the **new I2C master API** (`i2c_new_master_bus`), not the legacy `i2c_driver_install`.
+Requires ESP-IDF v5.5.3. Uses the **new I2C master API** (`i2c_new_master_bus`), not the legacy `i2c_driver_install`.
 
 ```bash
 cd firmware

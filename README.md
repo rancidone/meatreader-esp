@@ -8,7 +8,7 @@ Flash the full self-contained firmware (ESP32 + web UI served from SPIFFS):
 
 ### Prerequisites
 
-1. Install [ESP-IDF 5.1+](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/)
+1. Install [ESP-IDF v5.5.3](https://docs.espressif.com/projects/esp-idf/en/v5.5.3/esp32/get-started/)
 2. Install Node.js 18+
 
 ### One-command flash
