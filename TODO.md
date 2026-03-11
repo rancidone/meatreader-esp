@@ -3,8 +3,8 @@
 # TODO: VFS Migration to ESP-IDF 5.5.3 (Phased)
 
 ## Phase 1: Baseline Alignment
-- [ ] Update IDF baseline to `v5.5.3` in startup/tooling scripts.
-- [ ] Update docs to state `ESP-IDF v5.5.3` as required version.
+- [x] Update IDF baseline to `v5.5.3` in startup/tooling scripts.
+- [x] Update docs to state `ESP-IDF v5.5.3` as required version.
 - [ ] Regenerate/refresh `firmware/dependencies.lock` so `idf.version = 5.5.3`.
 - [ ] Confirm clean configure/build uses `IDF_VER="v5.5.3"`.
 
