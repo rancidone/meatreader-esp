@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "esp_http_server.h"
 #include "esp_log.h"
+#include "storage.h"
 #include <sys/stat.h>
 
 static const char *TAG = "routes_static";
@@ -76,6 +77,11 @@ static esp_err_t serve_file(httpd_req_t *req, const char *filepath)
 
 esp_err_t routes_static_handler(httpd_req_t *req)
 {
+    if (!storage_fs_mounted()) {
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Storage unavailable");
+        return ESP_FAIL;
+    }
+
     const char *uri = req->uri;
     char filepath[520]; /* SPIFFS_BASE (7) + max URI (512) + NUL */
 

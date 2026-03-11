@@ -51,10 +51,7 @@ void app_main(void)
     ESP_ERROR_CHECK(err);
 
     // ── SPIFFS ────────────────────────────────────────────────────────────
-    esp_err_t spiffs_ret = storage_fs_init();
-    if (spiffs_ret != ESP_OK) {
-        ESP_LOGW(TAG, "SPIFFS mount failed (%s) — static UI unavailable", esp_err_to_name(spiffs_ret));
-    }
+    storage_fs_init(); // non-fatal; storage module logs outcome
 
     // ── Networking init (required before WiFi) ────────────────────────────
     ESP_ERROR_CHECK(esp_netif_init());
