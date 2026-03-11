@@ -10,10 +10,10 @@ idf_component_register(
         sensor_mgr
         calibration
         alert_mgr
+        storage
         wifi_mgr
         http_server
         nvs_flash
         esp_netif
         esp_event
-        spiffs
 )
