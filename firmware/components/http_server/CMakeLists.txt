@@ -29,5 +29,5 @@ idf_component_register(
         app_update
         freertos
         spiffs
-        esp_vfs
+        vfs
 )

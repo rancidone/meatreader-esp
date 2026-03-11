@@ -77,7 +77,7 @@ static esp_err_t serve_file(httpd_req_t *req, const char *filepath)
 esp_err_t routes_static_handler(httpd_req_t *req)
 {
     const char *uri = req->uri;
-    char filepath[256];
+    char filepath[520]; /* SPIFFS_BASE (7) + max URI (512) + NUL */
 
     // Build full SPIFFS path.
     snprintf(filepath, sizeof(filepath), "%s%s", SPIFFS_BASE, uri);
