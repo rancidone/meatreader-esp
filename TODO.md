@@ -1,13 +1,13 @@
 # Meatreader ESP32 — Implementation TODO
 
-## Next: Native Mobile + Device UI Roadmap
+## Native Mobile + Device UI Roadmap (Phases 8–11 Complete)
 
 ### Summary
 
-- Reposition the product around a production-grade native mobile app as the primary user interface.
-- Keep the existing Svelte web UI as a device-local setup/admin console instead of the main end-user app.
-- Add an on-device TFT UI track using physical buttons or encoder input.
-- Keep firmware HTTP APIs as the near-term integration surface for both native mobile and local web admin flows.
+- Native mobile app (React Native + Expo) is the primary user interface.
+- Svelte web UI is the device-local setup/admin console.
+- On-device TFT UI track deferred pending hardware selection (see Future section).
+- Firmware HTTP APIs serve both native mobile and local web admin flows.
 
 ### Phase 8: Product Reframe and Repository Structure
 
@@ -37,14 +37,14 @@
   - [x] Large channel temperature tiles
   - [x] Prominent connection/health state
   - [x] Fast thumb-friendly controls
-  - [ ] Simple chart/history entry point if feasible in v1
+  - [x] Simple chart/history entry point if feasible in v1
 - [x] Implement the first mobile device onboarding flow:
   - [x] Add/connect device by IP on the local network
   - [x] Save and switch between remembered devices
 - [x] Implement first-pass mobile actions:
   - [x] View/apply cook profiles
   - [x] Surface alert state and triggered conditions
-- [ ] Defer advanced config, calibration, and OTA parity until after the dashboard baseline unless blocked by real usage.
+- [x] Defer advanced config, calibration, and OTA parity until after the dashboard baseline unless blocked by real usage.
 
 ### Phase 10: Web UI Rescope and Cleanup
 
@@ -69,28 +69,6 @@
 - [x] Add only additive API changes where possible.
 - [x] If current endpoints are too fragmented, add a consolidated dashboard-oriented read model for app clients.
 - [x] Preserve compatibility for the existing local web admin console during API additions.
-
-### Phase 12: On-Device TFT UI Foundation
-
-- [ ] Record the exact TFT hardware details before implementation:
-  - [ ] Controller
-  - [ ] Resolution
-  - [ ] Bus type
-  - [ ] Color depth / memory constraints
-  - [ ] Input hardware (buttons / encoder)
-- [ ] Add a firmware display subsystem abstraction instead of wiring display logic directly into `main.c`.
-- [ ] Add an input/navigation abstraction for physical controls.
-- [ ] Build the first on-device UI as a status/control surface, not a full clone of the mobile app.
-- [ ] Implement the first screen set:
-  - [ ] Channel temperatures and labels
-  - [ ] Connectivity / provisioning state
-  - [ ] Alert / cook-profile state
-  - [ ] Simple menu navigation
-- [ ] Keep the UI optimized for a ~2 inch TFT:
-  - [ ] Large numerals
-  - [ ] High contrast
-  - [ ] Minimal hierarchy depth
-  - [ ] No touch dependency in v1
 
 ### Testing and Acceptance
 
@@ -129,6 +107,21 @@
 - **Phase 5**: PWA shell, service worker SSE keepalive, Web Push (VAPID), install/offline UI
 - **Phase 6**: OTA firmware update (`/ota`, `/ota/rollback`, partition table, rollback on failed boot, Firmware.svelte UI)
 - **Phase 7**: SPIFFS static file serving — `routes_static.c` catch-all, SPA fallback, SPIFFS mount in `main.c`, `spiffs_create_partition_image` CMake target, `build-all.sh`, README
+- **Phase 8**: Product reframe — README updated, npm workspace layout, shared `@meatreader/api-types` package, mobile feature scope documented
+- **Phase 9**: React Native + Expo mobile app — navigation shell, dashboard tiles, device onboarding, cook profiles, alerts, temperature history chart tab
+- **Phase 10**: Web UI rescope — PWA build fixed (Workbox `injectionPoint`), install banner removed, narrow-screen responsive topbar
+- **Phase 11**: Firmware API alignment — `GET /dashboard` consolidated endpoint (snapshot + status + alerts), `DashboardResponse` type, `getDashboard()` client method, full HTTP API table in README
+
+---
+
+## Future: On-Device TFT UI (Phase 12)
+
+*Blocked pending TFT hardware selection. Capture controller, resolution, bus type, color depth, and input hardware (buttons/encoder) before starting.*
+
+- Add a firmware display subsystem abstraction instead of wiring display logic directly into `main.c`.
+- Add an input/navigation abstraction for physical controls.
+- First screen set: channel temperatures, connectivity/provisioning state, alert/profile state, simple menu navigation.
+- Optimized for ~2 inch TFT: large numerals, high contrast, minimal hierarchy depth, no touch in v1.
 
 ---
 
