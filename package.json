@@ -2,8 +2,6 @@
   "name": "meatreader",
   "private": true,
   "workspaces": [
-    "packages/*",
-    "thermometer-ui",
-    "mobile-app"
+    "thermometer-ui"
   ]
 }
