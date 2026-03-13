@@ -16,6 +16,7 @@ static http_app_ctx_t    s_ctx;
 esp_err_t handle_temps_latest(httpd_req_t *req);
 esp_err_t handle_status(httpd_req_t *req);
 esp_err_t handle_device(httpd_req_t *req);
+esp_err_t handle_dashboard(httpd_req_t *req);
 esp_err_t handle_config_get(httpd_req_t *req);
 esp_err_t handle_config_patch_staged(httpd_req_t *req);
 esp_err_t handle_config_apply(httpd_req_t *req);
@@ -53,6 +54,7 @@ static const httpd_uri_t s_normal_uris[] = {
     // Status / device info
     { .uri = "/status",                .method = HTTP_GET,   .handler = handle_status             },
     { .uri = "/device",                .method = HTTP_GET,   .handler = handle_device             },
+    { .uri = "/dashboard",             .method = HTTP_GET,   .handler = handle_dashboard          },
     // Config
     { .uri = "/config",                .method = HTTP_GET,   .handler = handle_config_get         },
     { .uri = "/config/staged",         .method = HTTP_PATCH, .handler = handle_config_patch_staged },
