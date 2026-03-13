@@ -1,6 +1,18 @@
 # Meatreader ESP32
 
-ESP32-based wireless meat thermometer. Firmware reads up to 4 thermistor channels via ADS1115 ADC, applies Steinhart-Hart calibration, and serves a Svelte web UI from SPIFFS.
+ESP32-based wireless meat thermometer. Firmware reads up to 4 thermistor channels via ADS1115 ADC, applies Steinhart-Hart calibration, and exposes an HTTP API consumed by a native mobile app and a local web admin console.
+
+## Product Direction
+
+**Native mobile app** (React Native + Expo) is the primary user interface — live dashboard, cook profiles, alerts, and device management from your phone.
+
+**Web UI** (`thermometer-ui/`) is a device-local admin console for setup, calibration, diagnostics, and fallback browser access. It is not the primary end-user experience.
+
+**PWA install** is no longer the primary distribution path. The native mobile app replaces it as the recommended way to use Meatreader day-to-day.
+
+**On-device TFT UI** (in progress) provides a heads-up status display with physical button navigation — no phone required during a cook.
+
+The ESP32 firmware HTTP API is the integration surface for all clients. It remains LAN-first; no cloud dependency.
 
 ## Production Build & Flash
 
