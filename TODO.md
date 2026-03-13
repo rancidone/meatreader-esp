@@ -60,15 +60,15 @@
 
 ### Phase 11: Firmware API Alignment for Native Clients
 
-- [ ] Review existing HTTP endpoints for native-app ergonomics.
-- [ ] Identify API gaps for:
-  - [ ] Device onboarding/discovery support
-  - [ ] Stable dashboard data loading
-  - [ ] Alert/profile actions
-  - [ ] Device metadata and health
-- [ ] Add only additive API changes where possible.
-- [ ] If current endpoints are too fragmented, add a consolidated dashboard-oriented read model for app clients.
-- [ ] Preserve compatibility for the existing local web admin console during API additions.
+- [x] Review existing HTTP endpoints for native-app ergonomics.
+- [x] Identify API gaps for:
+  - [x] Device onboarding/discovery support
+  - [x] Stable dashboard data loading
+  - [x] Alert/profile actions
+  - [x] Device metadata and health
+- [x] Add only additive API changes where possible.
+- [x] If current endpoints are too fragmented, add a consolidated dashboard-oriented read model for app clients.
+- [x] Preserve compatibility for the existing local web admin console during API additions.
 
 ### Phase 12: On-Device TFT UI Foundation
 

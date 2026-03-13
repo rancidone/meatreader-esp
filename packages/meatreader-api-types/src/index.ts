@@ -133,6 +133,16 @@ export interface CookProfile {
 // GET /profiles returns 8 slots; name="" means empty slot.
 export type ProfilesResponse = CookProfile[];
 
+// ── Dashboard ────────────────────────────────────────────────────────────────
+
+// GET /dashboard — consolidated read for mobile clients (snapshot + status + alerts).
+// snapshot is null when no sensor data is available yet (device never returns 503).
+export interface DashboardResponse {
+  snapshot: Snapshot | null;
+  status: StatusResponse;
+  alerts: AlertsResponse;
+}
+
 // ── OTA ──────────────────────────────────────────────────────────────────────
 
 export interface OtaRollbackResponse {
