@@ -17,9 +17,11 @@ The ESP32 firmware HTTP API is the integration surface for all clients. It remai
 ## Repository Layout
 
 ```
-firmware/          — ESP-IDF v5.5.3 C firmware (ESP32)
-thermometer-ui/    — Svelte 5 + TypeScript web admin console
-mobile-app/        — React Native + Expo native mobile app (primary UX)
+firmware/                        — ESP-IDF v5.5.3 C firmware (ESP32)
+thermometer-ui/                  — Svelte 5 + TypeScript web admin console
+mobile-app/                      — React Native + Expo native mobile app (primary UX)
+packages/
+  meatreader-api-types/          — Shared TypeScript API/domain types (workspace package)
 ```
 
 **firmware/** is the ESP32 firmware. It exposes the HTTP API that all clients consume.
@@ -28,7 +30,9 @@ mobile-app/        — React Native + Expo native mobile app (primary UX)
 
 **mobile-app/** will contain the React Native + Expo app (iOS/Android). This is the primary end-user interface. Initialization happens in Phase 9.
 
-The firmware and web UI share no build-time coupling to the mobile app. All clients communicate over the device's local HTTP API.
+**packages/meatreader-api-types/** is a private npm workspace package containing the TypeScript interfaces that mirror the firmware's HTTP JSON shapes. Both `thermometer-ui` and `mobile-app` depend on it via npm workspaces. The canonical types live here; `thermometer-ui/src/lib/api/types.ts` re-exports from this package. The firmware header `http_util.h` remains the ground truth — update the shared package whenever the firmware API shape changes.
+
+The repo is an npm workspace (root `package.json`). Run `npm install` at the root to link all packages.
 
 ## Production Build & Flash
 

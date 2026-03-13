@@ -25,6 +25,7 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
+    "@meatreader/api-types": "*",
     "uplot": "^1.6.32"
   }
 }
