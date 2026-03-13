@@ -17,46 +17,46 @@
   - [x] PWA is no longer the primary install/distribution path.
 - [x] Define the repo/workspace layout for a new native app package.
 - [x] Decide how shared TypeScript API/domain models will be reused between `thermometer-ui` and the native app.
-- [ ] Capture the minimum supported mobile feature set for the first release:
-  - [ ] Live dashboard
-  - [ ] Device connection management by local IP / saved device
-  - [ ] Cook profile apply/use
-  - [ ] Alert visibility and control
-  - [ ] Device health/status visibility
+- [x] Capture the minimum supported mobile feature set for the first release:
+  - [x] Live dashboard
+  - [x] Device connection management by local IP / saved device
+  - [x] Cook profile apply/use
+  - [x] Alert visibility and control
+  - [x] Device health/status visibility
 
 ### Phase 9: Native Mobile App Foundation (React Native + Expo)
 
-- [ ] Create a new React Native + Expo application in the repo.
-- [ ] Establish the mobile app architecture:
-  - [ ] API client layer for existing ESP32 HTTP endpoints
-  - [ ] Live update mechanism for temperature/status refresh
-  - [ ] Device persistence for remembered local devices
-  - [ ] Shared domain types where practical
-- [ ] Build the first mobile navigation shell.
-- [ ] Implement the first-pass instrument-panel dashboard UX:
-  - [ ] Large channel temperature tiles
-  - [ ] Prominent connection/health state
-  - [ ] Fast thumb-friendly controls
+- [x] Create a new React Native + Expo application in the repo.
+- [x] Establish the mobile app architecture:
+  - [x] API client layer for existing ESP32 HTTP endpoints
+  - [x] Live update mechanism for temperature/status refresh
+  - [x] Device persistence for remembered local devices
+  - [x] Shared domain types where practical
+- [x] Build the first mobile navigation shell.
+- [x] Implement the first-pass instrument-panel dashboard UX:
+  - [x] Large channel temperature tiles
+  - [x] Prominent connection/health state
+  - [x] Fast thumb-friendly controls
   - [ ] Simple chart/history entry point if feasible in v1
-- [ ] Implement the first mobile device onboarding flow:
-  - [ ] Add/connect device by IP on the local network
-  - [ ] Save and switch between remembered devices
-- [ ] Implement first-pass mobile actions:
-  - [ ] View/apply cook profiles
-  - [ ] Surface alert state and triggered conditions
+- [x] Implement the first mobile device onboarding flow:
+  - [x] Add/connect device by IP on the local network
+  - [x] Save and switch between remembered devices
+- [x] Implement first-pass mobile actions:
+  - [x] View/apply cook profiles
+  - [x] Surface alert state and triggered conditions
 - [ ] Defer advanced config, calibration, and OTA parity until after the dashboard baseline unless blocked by real usage.
 
 ### Phase 10: Web UI Rescope and Cleanup
 
-- [ ] Fix the current `thermometer-ui` production build failure in the PWA/Workbox packaging step.
-- [ ] Remove or reduce PWA-specific product work that no longer matches the roadmap.
-- [ ] Keep the web UI usable as a local admin console:
-  - [ ] Config
-  - [ ] Calibration
-  - [ ] Diagnostics
-  - [ ] Firmware update
-- [ ] Improve narrow-screen responsiveness enough for emergency/mobile browser use.
-- [ ] Avoid major design investment in the current browser shell beyond admin usability, since native mobile is the main UX track.
+- [x] Fix the current `thermometer-ui` production build failure in the PWA/Workbox packaging step.
+- [x] Remove or reduce PWA-specific product work that no longer matches the roadmap.
+- [x] Keep the web UI usable as a local admin console:
+  - [x] Config
+  - [x] Calibration
+  - [x] Diagnostics
+  - [x] Firmware update
+- [x] Improve narrow-screen responsiveness enough for emergency/mobile browser use.
+- [x] Avoid major design investment in the current browser shell beyond admin usability, since native mobile is the main UX track.
 
 ### Phase 11: Firmware API Alignment for Native Clients
 
