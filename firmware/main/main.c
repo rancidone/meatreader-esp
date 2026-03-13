@@ -13,6 +13,7 @@
 //   9. HTTP server start (provisioning or normal mode)
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "nvs_flash.h"
@@ -102,21 +103,28 @@ void app_main(void)
     ESP_LOGI(TAG, "Alert manager started");
 
     // ── WiFi ──────────────────────────────────────────────────────────────
-    device_config_t cfg;
-    config_mgr_get_active(config, &cfg);
+    // Heap-allocate to avoid pinning ~2 KB on the main task stack for the
+    // lifetime of app_main (device_config_t is too large for a 8 KB stack
+    // shared with the rest of the boot sequence).
+    device_config_t *cfg = malloc(sizeof(*cfg));
+    if (!cfg) {
+        ESP_LOGE(TAG, "OOM allocating config snapshot — halting");
+        esp_restart();
+    }
+    config_mgr_get_active(config, cfg);
 
     bool provisioning = false;
 
-    if (strlen(cfg.wifi_ssid) == 0) {
+    if (strlen(cfg->wifi_ssid) == 0) {
         // No credentials — go straight to SoftAP for first-time setup.
         ESP_LOGW(TAG, "No WiFi credentials — starting SoftAP \"%s\"", SOFTAP_SSID);
         ESP_ERROR_CHECK(wifi_mgr_start_softap(SOFTAP_SSID));
         provisioning = true;
     } else {
         // Credentials present — attempt STA connection.
-        ESP_LOGI(TAG, "Connecting to WiFi SSID: %s", cfg.wifi_ssid);
+        ESP_LOGI(TAG, "Connecting to WiFi SSID: %s", cfg->wifi_ssid);
         ESP_ERROR_CHECK(wifi_mgr_init());
-        ESP_ERROR_CHECK(wifi_mgr_connect(cfg.wifi_ssid, cfg.wifi_password));
+        ESP_ERROR_CHECK(wifi_mgr_connect(cfg->wifi_ssid, cfg->wifi_password));
         err = wifi_mgr_wait_connected(WIFI_CONNECT_TIMEOUT_MS);
 
         if (err != ESP_OK) {
@@ -129,6 +137,7 @@ void app_main(void)
             ESP_LOGI(TAG, "WiFi connected, IP: %s", wifi_mgr_get_ip());
         }
     }
+    free(cfg);
 
     // ── HTTP server ───────────────────────────────────────────────────────
     http_app_ctx_t http_ctx = {
