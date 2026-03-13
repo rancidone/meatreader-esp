@@ -12,8 +12,10 @@ export default defineConfig({
       filename: 'sw.ts',
       strategies: 'injectManifest',
       injectManifest: {
-        swSrc: 'src/sw.ts',
-        swDest: 'dist/sw.js',
+        // This SW does not use precaching, so disable Workbox manifest injection.
+        // vite-plugin-pwa skips the workbox injectManifest step when injectionPoint
+        // is undefined, avoiding the "no injection point found" build error.
+        injectionPoint: undefined,
       },
       manifest: {
         name: 'Meatreader',

@@ -18,19 +18,6 @@
     if (snap) void postSnapshotToSW(snap);
   });
 
-  // PWA install prompt
-  let installPrompt = $state<Event & { prompt(): Promise<void> } | null>(null);
-
-  if (typeof window !== 'undefined') {
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      installPrompt = e as Event & { prompt(): Promise<void> };
-    });
-    window.addEventListener('appinstalled', () => {
-      installPrompt = null;
-    });
-  }
-
   const tabs: { id: View; label: string }[] = [
     { id: 'dashboard',   label: 'Dashboard'   },
     { id: 'profiles',    label: 'Profiles'    },
@@ -58,16 +45,6 @@
   {#if tempsStore.error}
     <div class="offline-banner" role="alert">
       <span>Device offline — {tempsStore.error}</span>
-    </div>
-  {/if}
-
-  {#if installPrompt}
-    <div class="install-banner">
-      <span>Install Meatreader as an app for background temperature alerts</span>
-      <div class="install-actions">
-        <button class="primary" onclick={() => { void installPrompt?.prompt(); installPrompt = null; }}>Install</button>
-        <button onclick={() => installPrompt = null}>Dismiss</button>
-      </div>
     </div>
   {/if}
 
@@ -133,6 +110,7 @@
     font-size: 0.875rem;
     font-weight: 500;
     padding: 0.35rem 0.85rem;
+    white-space: nowrap;
   }
 
   .tab:hover {
@@ -145,6 +123,39 @@
     color: var(--color-text);
   }
 
+  /* ── Narrow-screen: stack wordmark above a scrollable tab row ─────── */
+
+  @media (max-width: 600px) {
+    .topbar {
+      height: auto;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0;
+      padding: 0.5rem 0.75rem 0;
+    }
+
+    .tabs {
+      width: 100%;
+      overflow-x: auto;
+      padding-bottom: 0.4rem;
+      /* Hide scrollbar visually but keep it functional */
+      scrollbar-width: none;
+    }
+
+    .tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tab {
+      font-size: 0.8rem;
+      padding: 0.3rem 0.65rem;
+    }
+
+    .content {
+      padding: 1rem 0.75rem;
+    }
+  }
+
   /* ── Offline banner ─────────────────────────────────────────────────── */
 
   .offline-banner {
@@ -155,26 +166,6 @@
     border-bottom: 1px solid color-mix(in srgb, var(--color-error) 50%, transparent);
     color: var(--color-error);
     font-size: 0.8rem;
-  }
-
-  /* ── Install banner ─────────────────────────────────────────────────── */
-
-  .install-banner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-    padding: 0.6rem 1.25rem;
-    background: color-mix(in srgb, var(--color-accent) 15%, var(--color-surface));
-    border-bottom: 1px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
-    font-size: 0.875rem;
-  }
-
-  .install-actions {
-    display: flex;
-    gap: 0.5rem;
-    flex-shrink: 0;
   }
 
   /* ── Content ────────────────────────────────────────────────────────── */

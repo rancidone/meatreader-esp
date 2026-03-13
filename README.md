@@ -1,6 +1,85 @@
 # Meatreader ESP32
 
-ESP32-based wireless meat thermometer. Firmware reads up to 4 thermistor channels via ADS1115 ADC, applies Steinhart-Hart calibration, and serves a Svelte web UI from SPIFFS.
+ESP32-based wireless meat thermometer. Firmware reads up to 4 thermistor channels via ADS1115 ADC, applies Steinhart-Hart calibration, and exposes an HTTP API consumed by a native mobile app and a local web admin console.
+
+## Product Direction
+
+**Native mobile app** (React Native + Expo) is the primary user interface — live dashboard, cook profiles, alerts, and device management from your phone.
+
+**Web UI** (`thermometer-ui/`) is a device-local admin console for setup, calibration, diagnostics, and fallback browser access. It is not the primary end-user experience.
+
+**PWA install** is no longer the primary distribution path. The native mobile app replaces it as the recommended way to use Meatreader day-to-day.
+
+**On-device TFT UI** (in progress) provides a heads-up status display with physical button navigation — no phone required during a cook.
+
+The ESP32 firmware HTTP API is the integration surface for all clients. It remains LAN-first; no cloud dependency.
+
+## Repository Layout
+
+```
+firmware/                        — ESP-IDF v5.5.3 C firmware (ESP32)
+thermometer-ui/                  — Svelte 5 + TypeScript web admin console
+mobile-app/                      — React Native + Expo native mobile app (primary UX)
+packages/
+  meatreader-api-types/          — Shared TypeScript API/domain types (workspace package)
+```
+
+**firmware/** is the ESP32 firmware. It exposes the HTTP API that all clients consume.
+
+**thermometer-ui/** is the device-local web admin console served from SPIFFS. Use it for calibration, config, diagnostics, and firmware updates from a browser.
+
+**mobile-app/** will contain the React Native + Expo app (iOS/Android). This is the primary end-user interface. Initialization happens in Phase 9.
+
+**packages/meatreader-api-types/** is a private npm workspace package containing the TypeScript interfaces that mirror the firmware's HTTP JSON shapes. Both `thermometer-ui` and `mobile-app` depend on it via npm workspaces. The canonical types live here; `thermometer-ui/src/lib/api/types.ts` re-exports from this package. The firmware header `http_util.h` remains the ground truth — update the shared package whenever the firmware API shape changes.
+
+The repo is an npm workspace (root `package.json`). Run `npm install` at the root to link all packages.
+
+## Mobile App — v1 Feature Scope
+
+The first release targets iOS (Android follows once the baseline is stable).
+
+| Feature | Scope |
+|---------|-------|
+| **Live dashboard** | Large temperature tiles per channel, connection/health state, fast refresh via polling or SSE |
+| **Device connection** | Add device by local IP; save and switch between remembered devices |
+| **Cook profiles** | View saved profiles; apply a profile to the active cook |
+| **Alerts** | See triggered alert state and the condition that fired it; silence/acknowledge alerts |
+| **Device health** | WiFi signal, uptime, channel quality — enough to diagnose a bad cook mid-run |
+
+Out of scope for v1: calibration, config editing, OTA firmware update, advanced chart history, cloud/remote access. These remain in the web admin console.
+
+## HTTP API
+
+All endpoints return JSON. The device runs an HTTP server on port 80.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/dashboard` | **Consolidated** — snapshot + status + alerts in one call. `snapshot` is `null` until first sensor reading; never returns 503. Preferred for mobile clients. |
+| `GET` | `/temps/latest` | Latest sensor snapshot (all channels). |
+| `GET` | `/status` | Device health, uptime, firmware version, WiFi RSSI. |
+| `GET` | `/device` | Static device metadata (platform, channel count, firmware). |
+| `GET` | `/config` | Full config object: persisted / active / staged. |
+| `PATCH` | `/config/staged` | Partial patch to staged config. |
+| `POST` | `/config/apply` | Promote staged → active. |
+| `POST` | `/config/commit` | Persist active → NVS. |
+| `POST` | `/config/revert-staged` | Revert staged ← active. |
+| `POST` | `/config/revert-active` | Revert active ← persisted (NVS). |
+| `GET` | `/alerts` | Per-channel alert config + live `triggered` state. |
+| `PATCH` | `/alerts/staged` | Update staged alert config. |
+| `GET` | `/profiles` | All 8 cook profile slots (empty slots have `name=""`). |
+| `PUT` | `/profiles/{id}` | Write a cook profile slot. |
+| `DELETE` | `/profiles/{id}` | Clear a cook profile slot. |
+| `GET` | `/calibration/live` | Live calibration reading for a channel (`?ch=N`). |
+| `POST` | `/calibration/session/start` | Begin calibration session. |
+| `POST` | `/calibration/point/capture` | Capture a calibration point. |
+| `POST` | `/calibration/solve` | Solve Steinhart-Hart coefficients from captured points. |
+| `POST` | `/calibration/accept` | Write solved coefficients to staged config. |
+| `GET` | `/metrics` | Prometheus text metrics (temperature, resistance, ADC, RSSI, uptime). |
+| `GET` | `/events` | Server-Sent Events stream — emits snapshot JSON on each sensor tick. |
+| `POST` | `/ota` | Upload firmware binary for OTA update. |
+| `POST` | `/ota/rollback` | Roll back to the previous OTA partition. |
+
+TypeScript API types are in `packages/meatreader-api-types/src/index.ts`. The mobile client wrapper is in `mobile-app/src/api/client.ts`.
 
 ## Production Build & Flash
 
