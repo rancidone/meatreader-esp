@@ -34,6 +34,20 @@ packages/
 
 The repo is an npm workspace (root `package.json`). Run `npm install` at the root to link all packages.
 
+## Mobile App — v1 Feature Scope
+
+The first release targets iOS (Android follows once the baseline is stable).
+
+| Feature | Scope |
+|---------|-------|
+| **Live dashboard** | Large temperature tiles per channel, connection/health state, fast refresh via polling or SSE |
+| **Device connection** | Add device by local IP; save and switch between remembered devices |
+| **Cook profiles** | View saved profiles; apply a profile to the active cook |
+| **Alerts** | See triggered alert state and the condition that fired it; silence/acknowledge alerts |
+| **Device health** | WiFi signal, uptime, channel quality — enough to diagnose a bad cook mid-run |
+
+Out of scope for v1: calibration, config editing, OTA firmware update, advanced chart history, cloud/remote access. These remain in the web admin console.
+
 ## Production Build & Flash
 
 Flash the full self-contained firmware (ESP32 + web UI served from SPIFFS):

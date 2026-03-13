@@ -1,43 +1,130 @@
 # Meatreader ESP32 — Implementation TODO
 
-# TODO: VFS Migration to ESP-IDF 5.5.3 (Phased)
+## Next: Native Mobile + Device UI Roadmap
 
-## Phase 1: Baseline Alignment
-- [x] Update IDF baseline to `v5.5.3` in startup/tooling scripts.
-- [x] Update docs to state `ESP-IDF v5.5.3` as required version.
-- [x] Regenerate/refresh `firmware/dependencies.lock` so `idf.version = 5.5.3`.
-- [x] Confirm clean configure/build uses `IDF_VER="v5.5.3"`.
+### Summary
 
-## Phase 2: Storage/VFS Refactor (No Behavior Change)
-- [x] Extract SPIFFS mount logic from `app_main` into a storage module.
-- [x] Add internal lifecycle API:
-  - [x] `storage_fs_init()`
-  - [x] `storage_fs_deinit()`
-- [x] Keep existing mount settings unchanged (`/spiffs`, `storage`, `max_files`).
-- [x] Continue using public SPIFFS API (`esp_vfs_spiffs_register`) as the supported current-path integration.
+- Reposition the product around a production-grade native mobile app as the primary user interface.
+- Keep the existing Svelte web UI as a device-local setup/admin console instead of the main end-user app.
+- Add an on-device TFT UI track using physical buttons or encoder input.
+- Keep firmware HTTP APIs as the near-term integration surface for both native mobile and local web admin flows.
 
-## Phase 3: Reliability and Visibility
-- [x] Add mount outcome logging with explicit error classification.
-- [x] Log SPIFFS usage/capacity on successful mount (`esp_spiffs_info`).
-- [x] Add mounted-state check before static route file serving.
-- [x] Preserve current fallback behavior when SPIFFS is unavailable.
+### Phase 8: Product Reframe and Repository Structure
 
-## Phase 4: Validation and Acceptance
-- [x] Run `idf.py fullclean build` on 5.5.3 and require success.
-- [x] Run existing host/unit tests in `firmware/tests` and require pass.
-- [x] Verify logs show mount success/failure clearly.
-- [x] Verify static assets still resolve from `/spiffs` and APIs remain functional if mount fails.
+- [x] Document the new product direction in `README.md`:
+  - [x] Native mobile app is the primary app surface.
+  - [x] Web UI is primarily for setup, calibration, diagnostics, and fallback access.
+  - [x] PWA is no longer the primary install/distribution path.
+- [x] Define the repo/workspace layout for a new native app package.
+- [x] Decide how shared TypeScript API/domain models will be reused between `thermometer-ui` and the native app.
+- [ ] Capture the minimum supported mobile feature set for the first release:
+  - [ ] Live dashboard
+  - [ ] Device connection management by local IP / saved device
+  - [ ] Cook profile apply/use
+  - [ ] Alert visibility and control
+  - [ ] Device health/status visibility
 
-## Done Criteria
-- [x] Project builds on ESP-IDF 5.5.3.
-- [x] No external HTTP API changes.
-- [x] No partition-table changes.
-- [x] Runtime behavior unchanged except clearer storage diagnostics.
+### Phase 9: Native Mobile App Foundation (React Native + Expo)
+
+- [ ] Create a new React Native + Expo application in the repo.
+- [ ] Establish the mobile app architecture:
+  - [ ] API client layer for existing ESP32 HTTP endpoints
+  - [ ] Live update mechanism for temperature/status refresh
+  - [ ] Device persistence for remembered local devices
+  - [ ] Shared domain types where practical
+- [ ] Build the first mobile navigation shell.
+- [ ] Implement the first-pass instrument-panel dashboard UX:
+  - [ ] Large channel temperature tiles
+  - [ ] Prominent connection/health state
+  - [ ] Fast thumb-friendly controls
+  - [ ] Simple chart/history entry point if feasible in v1
+- [ ] Implement the first mobile device onboarding flow:
+  - [ ] Add/connect device by IP on the local network
+  - [ ] Save and switch between remembered devices
+- [ ] Implement first-pass mobile actions:
+  - [ ] View/apply cook profiles
+  - [ ] Surface alert state and triggered conditions
+- [ ] Defer advanced config, calibration, and OTA parity until after the dashboard baseline unless blocked by real usage.
+
+### Phase 10: Web UI Rescope and Cleanup
+
+- [ ] Fix the current `thermometer-ui` production build failure in the PWA/Workbox packaging step.
+- [ ] Remove or reduce PWA-specific product work that no longer matches the roadmap.
+- [ ] Keep the web UI usable as a local admin console:
+  - [ ] Config
+  - [ ] Calibration
+  - [ ] Diagnostics
+  - [ ] Firmware update
+- [ ] Improve narrow-screen responsiveness enough for emergency/mobile browser use.
+- [ ] Avoid major design investment in the current browser shell beyond admin usability, since native mobile is the main UX track.
+
+### Phase 11: Firmware API Alignment for Native Clients
+
+- [ ] Review existing HTTP endpoints for native-app ergonomics.
+- [ ] Identify API gaps for:
+  - [ ] Device onboarding/discovery support
+  - [ ] Stable dashboard data loading
+  - [ ] Alert/profile actions
+  - [ ] Device metadata and health
+- [ ] Add only additive API changes where possible.
+- [ ] If current endpoints are too fragmented, add a consolidated dashboard-oriented read model for app clients.
+- [ ] Preserve compatibility for the existing local web admin console during API additions.
+
+### Phase 12: On-Device TFT UI Foundation
+
+- [ ] Record the exact TFT hardware details before implementation:
+  - [ ] Controller
+  - [ ] Resolution
+  - [ ] Bus type
+  - [ ] Color depth / memory constraints
+  - [ ] Input hardware (buttons / encoder)
+- [ ] Add a firmware display subsystem abstraction instead of wiring display logic directly into `main.c`.
+- [ ] Add an input/navigation abstraction for physical controls.
+- [ ] Build the first on-device UI as a status/control surface, not a full clone of the mobile app.
+- [ ] Implement the first screen set:
+  - [ ] Channel temperatures and labels
+  - [ ] Connectivity / provisioning state
+  - [ ] Alert / cook-profile state
+  - [ ] Simple menu navigation
+- [ ] Keep the UI optimized for a ~2 inch TFT:
+  - [ ] Large numerals
+  - [ ] High contrast
+  - [ ] Minimal hierarchy depth
+  - [ ] No touch dependency in v1
+
+### Testing and Acceptance
+
+- Firmware:
+  - Existing host/unit tests still pass.
+  - Display/input code builds cleanly with the selected hardware configuration.
+  - Device remains functional with display subsystem enabled and disabled.
+- Web admin UI:
+  - `npm test` passes.
+  - Production build succeeds after packaging cleanup.
+  - Config, calibration, diagnostics, and firmware update flows remain usable.
+  - Narrow-screen browser access is validated for fallback use.
+- Native mobile app:
+  - App can connect to a device by local IP.
+  - Live temperatures update reliably during a cook.
+  - Dashboard renders clearly on iPhone-sized screens.
+  - Profile and alert actions succeed against a real device.
+  - iOS validation is required for the first release milestone.
+  - Android smoke coverage follows once the baseline app flow is stable.
+
+### Assumptions and Defaults
+
+- Native mobile replaces PWA as the primary product direction.
+- React Native + Expo is the selected mobile stack.
+- iOS quality is the first-class target, but the app should remain cross-platform-capable.
+- The existing Svelte app remains in the repo as a setup/admin console.
+- The on-device UI targets a non-touch TFT with physical controls for the first iteration.
+- Exact TFT hardware details still need to be captured before implementation starts.
 
 ---
 
 ## Done
 
+- **VFS Migration (Phases 1–4)**: IDF 5.5.3 baseline, storage component extraction, mount logging/capacity, mounted-state guard, build verified
 - **Phase 4**: Cook profiles (`cook_profile_t`, `/profiles` CRUD, profile store/UI, stall detection firmware + UI badge)
 - **Phase 5**: PWA shell, service worker SSE keepalive, Web Push (VAPID), install/offline UI
 - **Phase 6**: OTA firmware update (`/ota`, `/ota/rollback`, partition table, rollback on failed boot, Firmware.svelte UI)
