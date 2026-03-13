@@ -67,6 +67,13 @@ export interface AlertConfig {
   webhook_url: string;
 }
 
+// GET /alerts response — AlertConfig extended with live triggered state.
+export interface AlertStatus extends AlertConfig {
+  triggered: boolean;
+}
+
+export type AlertsResponse = AlertStatus[];
+
 export interface DeviceConfig {
   wifi_ssid: string;
   wifi_password: string;

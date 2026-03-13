@@ -1,4 +1,4 @@
-import type { DeviceConfig, DeviceConfigPatch, DeviceResponse, ProfilesResponse, Snapshot, StatusResponse } from '@meatreader/api-types';
+import type { AlertConfig, AlertsResponse, DeviceConfig, DeviceConfigPatch, DeviceResponse, ProfilesResponse, Snapshot, StatusResponse } from '@meatreader/api-types';
 import { ApiError } from '@meatreader/api-types';
 
 export class MeatreaderClient {
@@ -42,5 +42,21 @@ export class MeatreaderClient {
 
   getProfiles(): Promise<ProfilesResponse> {
     return this.request('/profiles');
+  }
+
+  getAlerts(): Promise<AlertsResponse> {
+    return this.request('/alerts');
+  }
+
+  patchAlerts(alerts: AlertConfig[]): Promise<{ staged_alerts: AlertsResponse }> {
+    return this.request('/alerts/staged', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(alerts),
+    });
+  }
+
+  postConfigApply(): Promise<void> {
+    return this.request('/config/apply', { method: 'POST' });
   }
 }
