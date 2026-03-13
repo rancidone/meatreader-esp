@@ -14,6 +14,22 @@ ESP32-based wireless meat thermometer. Firmware reads up to 4 thermistor channel
 
 The ESP32 firmware HTTP API is the integration surface for all clients. It remains LAN-first; no cloud dependency.
 
+## Repository Layout
+
+```
+firmware/          — ESP-IDF v5.5.3 C firmware (ESP32)
+thermometer-ui/    — Svelte 5 + TypeScript web admin console
+mobile-app/        — React Native + Expo native mobile app (primary UX)
+```
+
+**firmware/** is the ESP32 firmware. It exposes the HTTP API that all clients consume.
+
+**thermometer-ui/** is the device-local web admin console served from SPIFFS. Use it for calibration, config, diagnostics, and firmware updates from a browser.
+
+**mobile-app/** will contain the React Native + Expo app (iOS/Android). This is the primary end-user interface. Initialization happens in Phase 9.
+
+The firmware and web UI share no build-time coupling to the mobile app. All clients communicate over the device's local HTTP API.
+
 ## Production Build & Flash
 
 Flash the full self-contained firmware (ESP32 + web UI served from SPIFFS):
