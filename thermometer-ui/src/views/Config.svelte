@@ -1,8 +1,6 @@
 <script lang="ts">
   import { configStore } from '../lib/stores/config.svelte.ts';
   import type { ChannelConfig, AlertConfig, AlertMethod } from '../lib/api/types.ts';
-  import { subscribeToPush, unsubscribeFromPush } from '../lib/vapid.ts';
-
   // Load config on mount.
   $effect(() => { void configStore.fetch(); });
 
@@ -18,16 +16,6 @@
   let localChannels      = $state<ChannelConfig[]>([]);
   let localAlerts        = $state<AlertConfig[]>([]);
   let showPassword     = $state(false);
-  let pushSubscribed   = $state(false);
-  let pushPending      = $state(false);
-
-  // Check push subscription state on mount
-  $effect(() => {
-    if (!('PushManager' in window) || !('serviceWorker' in navigator)) return;
-    void navigator.serviceWorker.ready.then((reg) =>
-      reg.pushManager.getSubscription().then((sub) => { pushSubscribed = sub !== null; })
-    );
-  });
 
   // Deep-copy channels so mutations don't alias store objects.
   function cloneChannels(chs: ChannelConfig[]): ChannelConfig[] {
@@ -273,47 +261,6 @@
           </details>
         </fieldset>
       {/each}
-
-      <!-- ── Browser notifications ───────────────────────────────────── -->
-      {#if typeof Notification !== 'undefined' && Notification.permission !== 'granted'}
-        <div class="notif-prompt">
-          <span>Enable browser notifications to get alerted when temperatures are reached.</span>
-          <button type="button" onclick={() => void Notification.requestPermission()}>
-            Enable Notifications
-          </button>
-        </div>
-      {/if}
-
-      <!-- ── Web Push subscription ────────────────────────────────────── -->
-      {#if 'PushManager' in window}
-        <div class="notif-prompt">
-          <span>
-            {pushSubscribed
-              ? 'Web Push active — alerts work even when the browser is closed.'
-              : 'Subscribe to Web Push for background alerts (requires device firmware support).'}
-          </span>
-          <button
-            type="button"
-            disabled={pushPending}
-            onclick={async () => {
-              pushPending = true;
-              try {
-                if (pushSubscribed) {
-                  await unsubscribeFromPush();
-                  pushSubscribed = false;
-                } else {
-                  const sub = await subscribeToPush();
-                  pushSubscribed = sub !== null;
-                }
-              } finally {
-                pushPending = false;
-              }
-            }}
-          >
-            {pushSubscribed ? 'Unsubscribe' : 'Subscribe'}
-          </button>
-        </div>
-      {/if}
 
       {#each localAlerts as _alert, i}
         <fieldset>
