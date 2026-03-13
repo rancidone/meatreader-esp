@@ -110,6 +110,7 @@
     font-size: 0.875rem;
     font-weight: 500;
     padding: 0.35rem 0.85rem;
+    white-space: nowrap;
   }
 
   .tab:hover {
@@ -120,6 +121,39 @@
   .tab.active {
     background: var(--color-surface-alt);
     color: var(--color-text);
+  }
+
+  /* ── Narrow-screen: stack wordmark above a scrollable tab row ─────── */
+
+  @media (max-width: 600px) {
+    .topbar {
+      height: auto;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0;
+      padding: 0.5rem 0.75rem 0;
+    }
+
+    .tabs {
+      width: 100%;
+      overflow-x: auto;
+      padding-bottom: 0.4rem;
+      /* Hide scrollbar visually but keep it functional */
+      scrollbar-width: none;
+    }
+
+    .tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tab {
+      font-size: 0.8rem;
+      padding: 0.3rem 0.65rem;
+    }
+
+    .content {
+      padding: 1rem 0.75rem;
+    }
   }
 
   /* ── Offline banner ─────────────────────────────────────────────────── */
