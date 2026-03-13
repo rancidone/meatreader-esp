@@ -14,7 +14,7 @@
 
 ## Active
 
-- [ ] **Bug: main task stack overflow on boot** — `device_config_t cfg` (~2 KB) is stack-allocated in `app_main` (main.c:105); main task stack is only 4096 bytes, exhausted by the boot sequence. Fix: (1) raise `CONFIG_ESP_MAIN_TASK_STACK_SIZE` to 8192 in `sdkconfig.defaults`, (2) heap-allocate `device_config_t` in `app_main` instead of stack.
+- [x] **Bug: main task stack overflow on boot** — `device_config_t cfg` (~2 KB) is stack-allocated in `app_main` (main.c:105); main task stack is only 4096 bytes, exhausted by the boot sequence. Fix: (1) raise `CONFIG_ESP_MAIN_TASK_STACK_SIZE` to 8192 in `sdkconfig.defaults`, (2) heap-allocate `device_config_t` in `app_main` instead of stack.
 
 ---
 
