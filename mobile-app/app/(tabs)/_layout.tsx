@@ -37,6 +37,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>🔔</Text>,
         }}
       />
+      <Tabs.Screen
+        name="chart"
+        options={{
+          title: 'Chart',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>📈</Text>,
+        }}
+      />
     </Tabs>
   );
 }
