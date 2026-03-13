@@ -1,4 +1,4 @@
-import type { AlertConfig, AlertsResponse, DeviceConfig, DeviceConfigPatch, DeviceResponse, ProfilesResponse, Snapshot, StatusResponse } from '@meatreader/api-types';
+import type { AlertConfig, AlertsResponse, DashboardResponse, DeviceConfig, DeviceConfigPatch, DeviceResponse, ProfilesResponse, Snapshot, StatusResponse } from '@meatreader/api-types';
 import { ApiError } from '@meatreader/api-types';
 
 export class MeatreaderClient {
@@ -14,6 +14,10 @@ export class MeatreaderClient {
       throw new ApiError(res.status, `${init?.method ?? 'GET'} ${path} → ${res.status}`);
     }
     return res.json() as Promise<T>;
+  }
+
+  getDashboard(): Promise<DashboardResponse> {
+    return this.request('/dashboard');
   }
 
   getLatest(): Promise<Snapshot> {

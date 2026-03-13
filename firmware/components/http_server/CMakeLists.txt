@@ -8,6 +8,7 @@ idf_component_register(
         "routes_metrics.c"
         "routes_provision.c"
         "routes_alerts.c"
+        "routes_dashboard.c"
         "routes_events.c"
         "routes_profiles.c"
         "routes_push.c"

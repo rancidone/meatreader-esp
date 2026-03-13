@@ -48,6 +48,39 @@ The first release targets iOS (Android follows once the baseline is stable).
 
 Out of scope for v1: calibration, config editing, OTA firmware update, advanced chart history, cloud/remote access. These remain in the web admin console.
 
+## HTTP API
+
+All endpoints return JSON. The device runs an HTTP server on port 80.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/dashboard` | **Consolidated** — snapshot + status + alerts in one call. `snapshot` is `null` until first sensor reading; never returns 503. Preferred for mobile clients. |
+| `GET` | `/temps/latest` | Latest sensor snapshot (all channels). |
+| `GET` | `/status` | Device health, uptime, firmware version, WiFi RSSI. |
+| `GET` | `/device` | Static device metadata (platform, channel count, firmware). |
+| `GET` | `/config` | Full config object: persisted / active / staged. |
+| `PATCH` | `/config/staged` | Partial patch to staged config. |
+| `POST` | `/config/apply` | Promote staged → active. |
+| `POST` | `/config/commit` | Persist active → NVS. |
+| `POST` | `/config/revert-staged` | Revert staged ← active. |
+| `POST` | `/config/revert-active` | Revert active ← persisted (NVS). |
+| `GET` | `/alerts` | Per-channel alert config + live `triggered` state. |
+| `PATCH` | `/alerts/staged` | Update staged alert config. |
+| `GET` | `/profiles` | All 8 cook profile slots (empty slots have `name=""`). |
+| `PUT` | `/profiles/{id}` | Write a cook profile slot. |
+| `DELETE` | `/profiles/{id}` | Clear a cook profile slot. |
+| `GET` | `/calibration/live` | Live calibration reading for a channel (`?ch=N`). |
+| `POST` | `/calibration/session/start` | Begin calibration session. |
+| `POST` | `/calibration/point/capture` | Capture a calibration point. |
+| `POST` | `/calibration/solve` | Solve Steinhart-Hart coefficients from captured points. |
+| `POST` | `/calibration/accept` | Write solved coefficients to staged config. |
+| `GET` | `/metrics` | Prometheus text metrics (temperature, resistance, ADC, RSSI, uptime). |
+| `GET` | `/events` | Server-Sent Events stream — emits snapshot JSON on each sensor tick. |
+| `POST` | `/ota` | Upload firmware binary for OTA update. |
+| `POST` | `/ota/rollback` | Roll back to the previous OTA partition. |
+
+TypeScript API types are in `packages/meatreader-api-types/src/index.ts`. The mobile client wrapper is in `mobile-app/src/api/client.ts`.
+
 ## Production Build & Flash
 
 Flash the full self-contained firmware (ESP32 + web UI served from SPIFFS):
