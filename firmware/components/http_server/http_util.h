@@ -130,6 +130,7 @@ static inline cJSON *channel_reading_to_json(const channel_reading_t *ch,
     cJSON *obj = cJSON_CreateObject();
     cJSON_AddNumberToObject(obj, "id",               ch->channel_id);
     cJSON_AddNumberToObject(obj, "temperature_c",    ch->temperature_c);
+    cJSON_AddNumberToObject(obj, "temperature_f",    ch->temperature_c * 9.0f / 5.0f + 32.0f);
     cJSON_AddNumberToObject(obj, "raw_adc",          ch->raw_adc);
     cJSON_AddNumberToObject(obj, "resistance_ohms",  ch->resistance_ohms);
     cJSON_AddStringToObject(obj, "quality",          quality_str);

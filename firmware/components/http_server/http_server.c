@@ -18,11 +18,8 @@ esp_err_t handle_status(httpd_req_t *req);
 esp_err_t handle_device(httpd_req_t *req);
 esp_err_t handle_dashboard(httpd_req_t *req);
 esp_err_t handle_config_get(httpd_req_t *req);
-esp_err_t handle_config_patch_staged(httpd_req_t *req);
-esp_err_t handle_config_apply(httpd_req_t *req);
+esp_err_t handle_config_patch(httpd_req_t *req);
 esp_err_t handle_config_commit(httpd_req_t *req);
-esp_err_t handle_config_revert_staged(httpd_req_t *req);
-esp_err_t handle_config_revert_active(httpd_req_t *req);
 esp_err_t handle_cal_live(httpd_req_t *req);
 esp_err_t handle_cal_session_start(httpd_req_t *req);
 esp_err_t handle_cal_point_capture(httpd_req_t *req);
@@ -56,12 +53,9 @@ static const httpd_uri_t s_normal_uris[] = {
     { .uri = "/device",                .method = HTTP_GET,   .handler = handle_device             },
     { .uri = "/dashboard",             .method = HTTP_GET,   .handler = handle_dashboard          },
     // Config
-    { .uri = "/config",                .method = HTTP_GET,   .handler = handle_config_get         },
-    { .uri = "/config/staged",         .method = HTTP_PATCH, .handler = handle_config_patch_staged },
-    { .uri = "/config/apply",          .method = HTTP_POST,  .handler = handle_config_apply       },
-    { .uri = "/config/commit",         .method = HTTP_POST,  .handler = handle_config_commit      },
-    { .uri = "/config/revert-staged",  .method = HTTP_POST,  .handler = handle_config_revert_staged },
-    { .uri = "/config/revert-active",  .method = HTTP_POST,  .handler = handle_config_revert_active },
+    { .uri = "/config",        .method = HTTP_GET,   .handler = handle_config_get    },
+    { .uri = "/config",        .method = HTTP_PATCH, .handler = handle_config_patch  },
+    { .uri = "/config/commit", .method = HTTP_POST,  .handler = handle_config_commit },
     // Calibration
     { .uri = "/calibration/live",          .method = HTTP_GET,  .handler = handle_cal_live          },
     { .uri = "/calibration/session/start", .method = HTTP_POST, .handler = handle_cal_session_start },

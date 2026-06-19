@@ -108,9 +108,8 @@ esp_err_t handle_alerts_get(httpd_req_t *req)
     return send_json(req, arr, 200);
 }
 
-// PATCH /alerts/staged
-// Body: JSON array of alert configs. Updates staged alerts and returns the
-// full updated staged alerts array.
+// PATCH /alerts
+// Body: JSON array of alert configs. Updates active alerts immediately.
 esp_err_t handle_alerts_patch_staged(httpd_req_t *req)
 {
     http_app_ctx_t *ctx = (http_app_ctx_t *)req->user_ctx;
@@ -125,24 +124,22 @@ esp_err_t handle_alerts_patch_staged(httpd_req_t *req)
         return send_error(req, 400, "body must be a JSON array of alert configs");
     }
 
-    device_config_t staged;
-    config_mgr_get_staged(ctx->config, &staged);
+    device_config_t active;
+    config_mgr_get_active(ctx->config, &active);
 
-    if (!apply_alerts_patch(&staged, body)) {
+    if (!apply_alerts_patch(&active, body)) {
         cJSON_Delete(body);
         return send_error(req, 400, "alerts array must have exactly CONFIG_NUM_CHANNELS entries");
     }
     cJSON_Delete(body);
 
-    config_mgr_set_staged(ctx->config, &staged);
-
-    // Re-read staged to return actual post-patch state.
-    config_mgr_get_staged(ctx->config, &staged);
+    config_mgr_set_active(ctx->config, &active);
+    config_mgr_get_active(ctx->config, &active);
 
     cJSON *resp = cJSON_CreateObject();
     cJSON_AddStringToObject(resp, "status", "ok");
-    cJSON_AddItemToObject(resp, "staged_alerts", alerts_array_to_json(&staged));
+    cJSON_AddItemToObject(resp, "alerts", alerts_array_to_json(&active));
 
-    ESP_LOGD(TAG, "PATCH /alerts/staged → 200");
+    ESP_LOGD(TAG, "PATCH /alerts → 200");
     return send_json(req, resp, 200);
 }

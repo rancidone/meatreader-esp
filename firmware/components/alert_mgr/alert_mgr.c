@@ -312,11 +312,7 @@ void alert_mgr_check_snapshot(alert_mgr_t *mgr, const sensor_snapshot_t *snap)
     }
 
     if (config_changed) {
-        // Write updated triggered state back into active config.
-        // We do a staged patch → apply cycle to keep the config_mgr interface clean.
-        // Simpler: directly update staged + apply so triggered state is live.
-        config_mgr_set_staged(mgr->config, &cfg);
-        config_mgr_apply(mgr->config);
+        config_mgr_set_active(mgr->config, &cfg);
     }
 }
 

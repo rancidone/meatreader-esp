@@ -24,7 +24,6 @@ struct config_mgr {
     SemaphoreHandle_t lock;
     device_config_t   persisted;
     device_config_t   active;
-    device_config_t   staged;
 };
 
 // ── Defaults ──────────────────────────────────────────────────────────────────
@@ -40,7 +39,7 @@ static void apply_defaults(device_config_t *cfg)
     cfg->spike_reject_delta_c   = CONFIG_DEFAULT_SPIKE_REJECT_DELTA;
     for (int i = 0; i < CONFIG_NUM_CHANNELS; i++) {
         cfg->channels[i].enabled     = true;
-        cfg->channels[i].adc_channel = i;
+        cfg->channels[i].adc_channel = i + 1;  // AIN1, AIN2 (AIN0/AIN3 unused on this board)
         cfg->channels[i].sh          = THERM_MATH_DEFAULT_COEFFS;
         snprintf(cfg->channels[i].label, CONFIG_CHANNEL_LABEL_MAX, "Channel %d", i);
         // alerts default: disabled, no target, no method
@@ -164,7 +163,6 @@ esp_err_t config_mgr_init(config_mgr_t **out)
     }
 
     mgr->active = mgr->persisted;
-    mgr->staged = mgr->active;
 
     *out = mgr;
     return ESP_OK;
@@ -177,33 +175,11 @@ void config_mgr_get_active(config_mgr_t *mgr, device_config_t *out)
     xSemaphoreGive(mgr->lock);
 }
 
-void config_mgr_get_staged(config_mgr_t *mgr, device_config_t *out)
+void config_mgr_set_active(config_mgr_t *mgr, const device_config_t *cfg)
 {
     xSemaphoreTake(mgr->lock, portMAX_DELAY);
-    *out = mgr->staged;
+    mgr->active = *cfg;
     xSemaphoreGive(mgr->lock);
-}
-
-void config_mgr_get_persisted(config_mgr_t *mgr, device_config_t *out)
-{
-    xSemaphoreTake(mgr->lock, portMAX_DELAY);
-    *out = mgr->persisted;
-    xSemaphoreGive(mgr->lock);
-}
-
-void config_mgr_set_staged(config_mgr_t *mgr, const device_config_t *staged)
-{
-    xSemaphoreTake(mgr->lock, portMAX_DELAY);
-    mgr->staged = *staged;
-    xSemaphoreGive(mgr->lock);
-}
-
-void config_mgr_apply(config_mgr_t *mgr)
-{
-    xSemaphoreTake(mgr->lock, portMAX_DELAY);
-    mgr->active = mgr->staged;
-    xSemaphoreGive(mgr->lock);
-    ESP_LOGI(TAG, "Config applied (staged → active)");
 }
 
 esp_err_t config_mgr_commit(config_mgr_t *mgr)
@@ -222,23 +198,6 @@ esp_err_t config_mgr_commit(config_mgr_t *mgr)
         ESP_LOGI(TAG, "Config committed to NVS");
     }
     return err;
-}
-
-void config_mgr_revert_staged(config_mgr_t *mgr)
-{
-    xSemaphoreTake(mgr->lock, portMAX_DELAY);
-    mgr->staged = mgr->active;
-    xSemaphoreGive(mgr->lock);
-    ESP_LOGI(TAG, "Staged config reverted to active");
-}
-
-void config_mgr_revert_active(config_mgr_t *mgr)
-{
-    xSemaphoreTake(mgr->lock, portMAX_DELAY);
-    mgr->active = mgr->persisted;
-    mgr->staged = mgr->active;
-    xSemaphoreGive(mgr->lock);
-    ESP_LOGI(TAG, "Active config reverted to persisted");
 }
 
 void config_mgr_deinit(config_mgr_t *mgr)

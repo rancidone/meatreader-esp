@@ -12,12 +12,12 @@
 
 // Bumped whenever device_config_t layout changes. Mismatched NVS blobs are
 // discarded and defaults are restored instead.
-#define CONFIG_SCHEMA_VERSION   4u
+#define CONFIG_SCHEMA_VERSION   6u
 
 // Per-channel thermistor configuration.
 typedef struct {
     bool        enabled;
-    int         adc_channel;   // ADS1115 channel index (0 or 1)
+    int         adc_channel;   // ADS1115 channel index (0–3)
     sh_coeffs_t sh;            // Steinhart-Hart coefficients
     char        label[CONFIG_CHANNEL_LABEL_MAX]; // Human-readable name
 } channel_config_t;
@@ -90,25 +90,13 @@ typedef struct config_mgr config_mgr_t;
 // Initialize config manager. Loads from NVS; falls back to defaults on failure.
 esp_err_t config_mgr_init(config_mgr_t **out);
 
-// Thread-safe copies of each config layer.
+// Thread-safe read of the active (running) config.
 void config_mgr_get_active(config_mgr_t *mgr, device_config_t *out);
-void config_mgr_get_staged(config_mgr_t *mgr, device_config_t *out);
-void config_mgr_get_persisted(config_mgr_t *mgr, device_config_t *out);
 
-// Replace the staged config wholesale. HTTP route handlers build the new staged
-// config from the current staged + JSON patch, then call this.
-void config_mgr_set_staged(config_mgr_t *mgr, const device_config_t *staged);
+// Replace the active config wholesale. Takes effect immediately for all readers.
+void config_mgr_set_active(config_mgr_t *mgr, const device_config_t *cfg);
 
-// staged → active
-void config_mgr_apply(config_mgr_t *mgr);
-
-// active → NVS flash.  The ONLY place NVS writes occur.
+// active → NVS flash. The ONLY place NVS writes occur.
 esp_err_t config_mgr_commit(config_mgr_t *mgr);
-
-// staged ← active
-void config_mgr_revert_staged(config_mgr_t *mgr);
-
-// active ← persisted, staged ← active
-void config_mgr_revert_active(config_mgr_t *mgr);
 
 void config_mgr_deinit(config_mgr_t *mgr);
