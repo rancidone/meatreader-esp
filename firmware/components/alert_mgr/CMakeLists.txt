@@ -6,7 +6,8 @@ idf_component_register(
         sensor_mgr
         esp_http_client
         esp_timer
-        json
         freertos
         log
+    PRIV_REQUIRES
+        espressif__cjson
 )
