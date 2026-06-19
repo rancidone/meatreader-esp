@@ -150,8 +150,7 @@ esp_err_t handle_provision_connect(httpd_req_t *req)
     config_mgr_get_active(ctx->config, &cfg);
     strncpy(cfg.wifi_ssid,     ssid,     sizeof(cfg.wifi_ssid) - 1);
     strncpy(cfg.wifi_password, password, sizeof(cfg.wifi_password) - 1);
-    config_mgr_set_staged(ctx->config, &cfg);
-    config_mgr_apply(ctx->config);
+    config_mgr_set_active(ctx->config, &cfg);
     esp_err_t err = config_mgr_commit(ctx->config);
     cJSON_Delete(body);
 

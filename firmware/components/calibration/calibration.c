@@ -196,12 +196,12 @@ esp_err_t calibration_accept(calibration_mgr_t *mgr, int channel,
 {
     if (channel < 0 || channel >= CONFIG_NUM_CHANNELS) return ESP_ERR_INVALID_ARG;
 
-    device_config_t staged;
-    config_mgr_get_staged(mgr->config, &staged);
-    staged.channels[channel].sh = *coeffs;
-    config_mgr_set_staged(mgr->config, &staged);
+    device_config_t active;
+    config_mgr_get_active(mgr->config, &active);
+    active.channels[channel].sh = *coeffs;
+    config_mgr_set_active(mgr->config, &active);
 
-    ESP_LOGI(TAG, "ch%d: calibration coefficients written to staged config", channel);
+    ESP_LOGI(TAG, "ch%d: calibration coefficients written to active config", channel);
     return ESP_OK;
 }
 

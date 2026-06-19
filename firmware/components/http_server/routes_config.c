@@ -20,7 +20,6 @@ static alert_method_t config_str_to_alert_method(const char *s)
 //
 // Applies recognized fields from a JSON patch object to an existing
 // device_config_t. Unknown keys are silently ignored (permissive patch).
-// This is the only place where JSON is parsed into the config struct.
 
 static void apply_json_patch(device_config_t *cfg, cJSON *patch)
 {
@@ -62,13 +61,10 @@ static void apply_json_patch(device_config_t *cfg, cJSON *patch)
         }
     }
 
-    // channels: full replacement of the channels array.
-    // If the array is present, it must have exactly CONFIG_NUM_CHANNELS entries.
     item = cJSON_GetObjectItemCaseSensitive(patch, "channels");
     if (cJSON_IsArray(item)) {
         int count = cJSON_GetArraySize(item);
         if (count != CONFIG_NUM_CHANNELS) {
-            // Partial channel arrays are rejected to avoid inconsistent state.
             ESP_LOGW(TAG, "patch: channels array must have exactly %d entries, got %d — ignoring",
                      CONFIG_NUM_CHANNELS, count);
         } else {
@@ -109,8 +105,6 @@ static void apply_json_patch(device_config_t *cfg, cJSON *patch)
         }
     }
 
-    // alerts: full replacement of the alerts array.
-    // Same pattern as channels: must have exactly CONFIG_NUM_CHANNELS entries.
     item = cJSON_GetObjectItemCaseSensitive(patch, "alerts");
     if (cJSON_IsArray(item)) {
         int count = cJSON_GetArraySize(item);
@@ -154,28 +148,20 @@ static void apply_json_patch(device_config_t *cfg, cJSON *patch)
 // ── Handlers ──────────────────────────────────────────────────────────────────
 
 // GET /config
-// Returns all three config layers: persisted, active, staged.
 esp_err_t handle_config_get(httpd_req_t *req)
 {
     http_app_ctx_t *ctx = (http_app_ctx_t *)req->user_ctx;
 
-    device_config_t persisted, active, staged;
-    config_mgr_get_persisted(ctx->config, &persisted);
+    device_config_t active;
     config_mgr_get_active(ctx->config, &active);
-    config_mgr_get_staged(ctx->config, &staged);
-
-    cJSON *obj = cJSON_CreateObject();
-    cJSON_AddItemToObject(obj, "persisted", device_config_to_json(&persisted));
-    cJSON_AddItemToObject(obj, "active",    device_config_to_json(&active));
-    cJSON_AddItemToObject(obj, "staged",    device_config_to_json(&staged));
 
     ESP_LOGD(TAG, "GET /config → 200");
-    return send_json(req, obj, 200);
+    return send_json(req, device_config_to_json(&active), 200);
 }
 
-// PATCH /config/staged
-// Partial update to staged config. Body: JSON object with fields to change.
-esp_err_t handle_config_patch_staged(httpd_req_t *req)
+// PATCH /config
+// Partial update applied directly to the active (running) config.
+esp_err_t handle_config_patch(httpd_req_t *req)
 {
     http_app_ctx_t *ctx = (http_app_ctx_t *)req->user_ctx;
 
@@ -184,38 +170,19 @@ esp_err_t handle_config_patch_staged(httpd_req_t *req)
         return send_error(req, 400, "missing or invalid JSON body");
     }
 
-    // Get current staged, apply patch, write back.
-    device_config_t staged;
-    config_mgr_get_staged(ctx->config, &staged);
-    apply_json_patch(&staged, body);
-    cJSON_Delete(body);
-    config_mgr_set_staged(ctx->config, &staged);
-
-    // Refresh staged to return the actual post-patch state.
-    config_mgr_get_staged(ctx->config, &staged);
-
-    cJSON *resp = cJSON_CreateObject();
-    cJSON_AddStringToObject(resp, "status", "ok");
-    cJSON_AddItemToObject(resp, "staged", device_config_to_json(&staged));
-
-    ESP_LOGD(TAG, "PATCH /config/staged → 200");
-    return send_json(req, resp, 200);
-}
-
-// POST /config/apply  (staged → active)
-esp_err_t handle_config_apply(httpd_req_t *req)
-{
-    http_app_ctx_t *ctx = (http_app_ctx_t *)req->user_ctx;
-    config_mgr_apply(ctx->config);
-
     device_config_t active;
+    config_mgr_get_active(ctx->config, &active);
+    apply_json_patch(&active, body);
+    cJSON_Delete(body);
+    config_mgr_set_active(ctx->config, &active);
+
     config_mgr_get_active(ctx->config, &active);
 
     cJSON *resp = cJSON_CreateObject();
     cJSON_AddStringToObject(resp, "status", "ok");
-    cJSON_AddItemToObject(resp, "active", device_config_to_json(&active));
+    cJSON_AddItemToObject(resp, "config", device_config_to_json(&active));
 
-    ESP_LOGD(TAG, "POST /config/apply → 200");
+    ESP_LOGD(TAG, "PATCH /config → 200");
     return send_json(req, resp, 200);
 }
 
@@ -235,37 +202,5 @@ esp_err_t handle_config_commit(httpd_req_t *req)
     cJSON_AddStringToObject(resp, "message", "configuration persisted to flash");
 
     ESP_LOGD(TAG, "POST /config/commit → 200");
-    return send_json(req, resp, 200);
-}
-
-// POST /config/revert-staged  (staged ← active)
-esp_err_t handle_config_revert_staged(httpd_req_t *req)
-{
-    http_app_ctx_t *ctx = (http_app_ctx_t *)req->user_ctx;
-    config_mgr_revert_staged(ctx->config);
-
-    device_config_t staged;
-    config_mgr_get_staged(ctx->config, &staged);
-
-    cJSON *resp = cJSON_CreateObject();
-    cJSON_AddStringToObject(resp, "status", "ok");
-    cJSON_AddItemToObject(resp, "staged", device_config_to_json(&staged));
-
-    return send_json(req, resp, 200);
-}
-
-// POST /config/revert-active  (active ← persisted, staged ← active)
-esp_err_t handle_config_revert_active(httpd_req_t *req)
-{
-    http_app_ctx_t *ctx = (http_app_ctx_t *)req->user_ctx;
-    config_mgr_revert_active(ctx->config);
-
-    device_config_t active;
-    config_mgr_get_active(ctx->config, &active);
-
-    cJSON *resp = cJSON_CreateObject();
-    cJSON_AddStringToObject(resp, "status", "ok");
-    cJSON_AddItemToObject(resp, "active", device_config_to_json(&active));
-
     return send_json(req, resp, 200);
 }

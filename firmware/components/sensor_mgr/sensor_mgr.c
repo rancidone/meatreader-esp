@@ -31,10 +31,13 @@ static const char *TAG = "sensor_mgr";
 // average a small number of samples to reduce quantization and pickup noise.
 #define ADS_SETTLE_DISCARD_SAMPLES   1
 #define ADS_OVERSAMPLE_SAMPLES       2
-// Open probe detection. Floating/open thermistor inputs tend to sit near
-// full-scale with large jitter, which appears as oscillating cold values.
-#define OPEN_CIRCUIT_RAW_THRESHOLD   32000
-#define OPEN_CIRCUIT_RES_OHMS        2000000.0f
+// Open probe detection. Floating/open thermistor inputs pull up toward VCC
+// through R_TOP, typically landing at 3.1–3.3 V (raw ~24k–26k, resistance
+// ~200k–700k Ω). The raw threshold catches readings above ~2.75 V; the
+// resistance threshold catches any remaining high-resistance cases.
+// Both are well above the ~100 kΩ maximum for this thermistor at –20 °C.
+#define OPEN_CIRCUIT_RAW_THRESHOLD   22000
+#define OPEN_CIRCUIT_RES_OHMS        500000.0f
 
 struct sensor_mgr {
     ads1115_handle_t   ads;
@@ -248,12 +251,15 @@ static void sensor_task(void *pvParam)
 
         tick++;
         if (tick % LOG_EVERY_N_TICKS == 0) {
-            ESP_LOGI(TAG, "tick=%lu  ch0=%.1f°C (%s)  ch1=%.1f°C (%s)",
-                     (unsigned long)tick,
-                     snap.channels[0].temperature_c,
-                     snap.channels[0].quality == SENSOR_QUALITY_OK ? "ok" : "err",
-                     snap.channels[1].temperature_c,
-                     snap.channels[1].quality == SENSOR_QUALITY_OK ? "ok" : "err");
+            char buf[128];
+            int pos = snprintf(buf, sizeof(buf), "tick=%lu", (unsigned long)tick);
+            for (int i = 0; i < CONFIG_NUM_CHANNELS && pos < (int)sizeof(buf) - 1; i++) {
+                float f = snap.channels[i].temperature_c * 9.0f / 5.0f + 32.0f;
+                pos += snprintf(buf + pos, sizeof(buf) - pos, "  ch%d=%.1f°C/%.1f°F (%s)",
+                                i, snap.channels[i].temperature_c, f,
+                                snap.channels[i].quality == SENSOR_QUALITY_OK ? "ok" : "err");
+            }
+            ESP_LOGI(TAG, "%s", buf);
         }
 
         // Clamp sample rate and compute delay.

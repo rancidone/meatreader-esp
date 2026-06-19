@@ -8,6 +8,8 @@
 
 // ── ADS1115 ───────────────────────────────────────────────────────────────────
 #define BOARD_ADS1115_ADDR  0x48  // ADDR pin tied to GND
+// Probe connectors are wired to AIN1 (ch0) and AIN2 (ch1). AIN0 and AIN3 are
+// unconnected on this board revision.
 
 // ── DS18B20 ───────────────────────────────────────────────────────────────────
 #define BOARD_DS18B20_PIN   13

@@ -107,7 +107,7 @@ esp_err_t handle_profiles_put(httpd_req_t *req)
     }
 
     device_config_t staged;
-    config_mgr_get_staged(ctx->config, &staged);
+    config_mgr_get_active(ctx->config, &staged);
 
     cook_profile_t *p = &staged.cook.profiles[id];
     memset(p, 0, sizeof(*p));
@@ -145,8 +145,7 @@ esp_err_t handle_profiles_put(httpd_req_t *req)
 
     cJSON_Delete(body);
 
-    config_mgr_set_staged(ctx->config, &staged);
-    config_mgr_apply(ctx->config);
+    config_mgr_set_active(ctx->config, &staged);
 
     device_config_t active;
     config_mgr_get_active(ctx->config, &active);
@@ -171,12 +170,11 @@ esp_err_t handle_profiles_delete(httpd_req_t *req)
     http_app_ctx_t *ctx = (http_app_ctx_t *)req->user_ctx;
 
     device_config_t staged;
-    config_mgr_get_staged(ctx->config, &staged);
+    config_mgr_get_active(ctx->config, &staged);
 
     memset(&staged.cook.profiles[id], 0, sizeof(cook_profile_t));
 
-    config_mgr_set_staged(ctx->config, &staged);
-    config_mgr_apply(ctx->config);
+    config_mgr_set_active(ctx->config, &staged);
 
     cJSON *resp = cJSON_CreateObject();
     cJSON_AddStringToObject(resp, "status", "ok");
