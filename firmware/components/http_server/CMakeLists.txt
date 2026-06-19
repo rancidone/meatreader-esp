@@ -18,7 +18,6 @@ idf_component_register(
     REQUIRES
         esp_http_server
         esp_http_client
-        json
         sensor_mgr
         config_mgr
         calibration
@@ -32,4 +31,5 @@ idf_component_register(
         spiffs
         vfs
         storage
+        espressif__cjson
 )
