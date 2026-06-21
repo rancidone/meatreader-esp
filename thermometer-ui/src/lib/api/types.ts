@@ -41,6 +41,8 @@ export interface DeviceResponse {
   firmware: string;
   firmware_version?: string;
   channels: number;
+  build_date?: string;
+  build_time?: string;
 }
 
 // ── Config ───────────────────────────────────────────────────────────────────
@@ -84,26 +86,35 @@ export interface DeviceConfig {
   alerts?: AlertConfig[];
 }
 
-// Partial patch body for PATCH /config/staged.
+// Partial patch body for PATCH /config.
 export type DeviceConfigPatch = Partial<Omit<DeviceConfig, 'channels' | 'alerts'>> & {
   channels?: ChannelConfig[];
   alerts?: AlertConfig[];
 };
 
-export interface ConfigStatus {
-  persisted: DeviceConfig;
-  active: DeviceConfig;
-  staged: DeviceConfig;
-}
-
 // ── Calibration ──────────────────────────────────────────────────────────────
 
-export interface CalibrationLiveResponse {
+export interface CalibrationChannelLive {
   channel: number;
-  reference_temp_c: number | null;   // null if DS18B20 not wired/available
-  thermistor_temp_c: number | null;  // null if no sensor snapshot yet
-  raw_adc: number;
+  thermistor_temp_c: number | null;
+  thermistor_temp_f: number | null;
+  temp_default_c: number | null;
+  temp_default_f: number | null;
+  raw_adc: number | null;
   quality: Quality;
+}
+
+export interface CalibrationLiveResponse {
+  reference_temp_c: number | null;
+  reference_temp_f: number | null;
+  channels: CalibrationChannelLive[];
+}
+
+export interface CalibrationChannelResult {
+  channel: number;
+  status: 'ok' | 'error';
+  coefficients?: SteinhartHartCoeffs;
+  error?: string;
 }
 
 export interface CalibrationPoint {

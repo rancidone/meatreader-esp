@@ -84,5 +84,9 @@ esp_err_t handle_device(httpd_req_t *req)
     cJSON_AddStringToObject(obj, "firmware",         FIRMWARE_VERSION);
     cJSON_AddStringToObject(obj, "firmware_version", fw_version);
     cJSON_AddNumberToObject(obj, "channels",         CONFIG_NUM_CHANNELS);
+    if (app_desc) {
+        cJSON_AddStringToObject(obj, "build_date", app_desc->date);
+        cJSON_AddStringToObject(obj, "build_time", app_desc->time);
+    }
     return send_json(req, obj, 200);
 }

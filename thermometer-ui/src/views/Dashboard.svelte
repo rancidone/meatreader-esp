@@ -50,7 +50,9 @@
 
     <div class="row">
       <span class="muted">{ui.polling ? `Updated ${formatAge(tempsStore.lastUpdated)}` : 'Paused'}</span>
+      <label class="history-label" for="history-select">History</label>
       <select
+        id="history-select"
         class="history-select"
         value={ui.historySize}
         onchange={e => ui.setHistorySize(Number((e.target as HTMLSelectElement).value))}
@@ -88,7 +90,7 @@
         channelIdx={idx}
         prediction={predictions.forChannel(idx)}
         alertActive={alertWatcher.alertActive[idx] ?? false}
-        onclick={() => alertWatcher.acknowledge(idx)}
+        onclick={() => { alertWatcher.acknowledge(idx); chartOpen = true; }}
       />
     {/each}
   </div>
@@ -168,6 +170,12 @@
     display: flex;
     flex-wrap: wrap;
     gap: var(--gap-xs);
+  }
+
+  .history-label {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    align-self: center;
   }
 
   .history-select {
