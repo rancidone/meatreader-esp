@@ -17,9 +17,10 @@
     label?:      string;
     channelIdx:  number;           // index into config.channels / alerts arrays
     prediction?: ChannelPrediction;
+    alertActive?: boolean;
     onclick?:    () => void;
   }
-  const { reading, snapshots, unit, color, label, channelIdx, prediction, onclick }: Props = $props();
+  const { reading, snapshots, unit, color, label, channelIdx, prediction, alertActive = false, onclick }: Props = $props();
 
   // ── Cook timer ──────────────────────────────────────────────────────────────
 
@@ -147,7 +148,7 @@
   });
 </script>
 
-<div class="card channel-card">
+<div class="card channel-card" class:alert-active={alertActive}>
   <div class="card-header">
     <h2>{label || `Channel ${reading?.id ?? '—'}`}</h2>
     <div class="badge-group">
@@ -449,5 +450,16 @@
 
   .sparkline-wrap.clickable:hover .expand-hint {
     opacity: 1;
+  }
+
+  /* Alert blink — pulses the card border until acknowledged (card click) */
+  @keyframes alert-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-warn) 60%, transparent); }
+    50%       { box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-warn) 0%, transparent); }
+  }
+
+  .channel-card.alert-active {
+    border-color: var(--color-warn);
+    animation: alert-pulse 1.2s ease-in-out infinite;
   }
 </style>

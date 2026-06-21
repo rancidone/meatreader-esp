@@ -49,6 +49,22 @@ bool sensor_mgr_get_latest(sensor_mgr_t *mgr, sensor_snapshot_t *out_snap);
 // Bit 0 (SENSOR_MGR_SNAPSHOT_BIT) is set after each snapshot write.
 EventGroupHandle_t sensor_mgr_get_event_group(sensor_mgr_t *mgr);
 
+// Maximum number of history points the ring buffer holds.
+#define SENSOR_HISTORY_POINTS  360
+
+// History point returned by sensor_mgr_copy_history().
+// temp_x10[i] is temperature × 10 in °C (INT16_MIN = no data for that channel).
+typedef struct {
+    int32_t  timestamp_s;
+    int16_t  temp_x10[CONFIG_NUM_CHANNELS];
+} sensor_history_point_t;
+
+// Copy the history ring buffer into caller-supplied array (oldest-first).
+// Returns the number of valid points written (≤ max_points).
+// buf must point to at least max_points sensor_history_point_t entries.
+int sensor_mgr_copy_history(sensor_mgr_t *mgr,
+                             sensor_history_point_t *buf, int max_points);
+
 // Update the stall_detected flag in the stored snapshot for the given channel.
 // Called by alert_mgr after each stall check to make the flag visible to SSE.
 void sensor_mgr_set_stall_detected(sensor_mgr_t *mgr, int channel, bool stall_detected);

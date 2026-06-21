@@ -5,17 +5,22 @@
   import Diagnostics  from './views/Diagnostics.svelte';
   import Profiles     from './views/Profiles.svelte';
   import Firmware     from './views/Firmware.svelte';
+  import { untrack } from 'svelte';
   import { tempsStore } from './lib/stores/temps.svelte.ts';
+  import { alertWatcher } from './lib/stores/alertWatcher.svelte.ts';
   import { postSnapshotToSW } from './lib/sw-bridge.ts';
 
   type View = 'dashboard' | 'config' | 'calibration' | 'diagnostics' | 'profiles' | 'firmware';
 
   let active = $state<View>('dashboard');
 
-  // Forward snapshots to service worker for background notifications
+  // Forward snapshots to SW and drive alert watcher on every SSE tick.
   $effect(() => {
     const snap = tempsStore.latest;
-    if (snap) void postSnapshotToSW(snap);
+    if (snap) {
+      void postSnapshotToSW(snap);
+      untrack(() => alertWatcher.processSnapshot(snap));
+    }
   });
 
   const tabs: { id: View; label: string }[] = [
