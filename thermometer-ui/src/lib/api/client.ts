@@ -7,7 +7,7 @@
 import {
   ApiError,
   type CalibrationLiveResponse,
-  type ConfigStatus,
+  type CalibrationChannelResult,
   type DeviceConfig,
   type DeviceConfigPatch,
   type DeviceResponse,
@@ -44,9 +44,15 @@ const patch = <T>(path: string, body: unknown) =>
 
 // ── Temps ────────────────────────────────────────────────────────────────────
 
+// Shape returned by GET /temps/history — one point per minute, up to 360 (6 h).
+export interface HistoryPoint { t: number; ch: (number | null)[]; }
+
 export const temps = {
   latest: () =>
     get<Snapshot>('/temps/latest'),
+
+  history: () =>
+    get<HistoryPoint[]>('/temps/history'),
 };
 
 // ── Status / Device ──────────────────────────────────────────────────────────
@@ -61,41 +67,32 @@ export const device = () =>
 
 export const config = {
   get: () =>
-    get<ConfigStatus>('/config'),
+    get<DeviceConfig>('/config'),
 
-  patchStaged: (body: DeviceConfigPatch) =>
-    patch<{ status: string; staged: DeviceConfig }>('/config/staged', body),
-
-  apply: () =>
-    post<{ status: string; active: DeviceConfig }>('/config/apply'),
+  patch: (body: DeviceConfigPatch) =>
+    patch<{ status: string; config: DeviceConfig }>('/config', body),
 
   commit: () =>
     post<{ status: string; message: string }>('/config/commit'),
-
-  revertStaged: () =>
-    post<{ status: string; staged: DeviceConfig }>('/config/revert-staged'),
-
-  revertActive: () =>
-    post<{ status: string; active: DeviceConfig }>('/config/revert-active'),
 };
 
 // ── Calibration ──────────────────────────────────────────────────────────────
 
 export const calibration = {
-  live: (ch: number) =>
-    get<CalibrationLiveResponse>(`/calibration/live?ch=${ch}`),
+  live: () =>
+    get<CalibrationLiveResponse>('/calibration/live'),
 
-  startSession: (ch: number) =>
-    post<{ status: string; session: CalibrationSession }>(`/calibration/session/start?ch=${ch}`),
+  startSession: () =>
+    post<{ status: string; sessions: CalibrationSession[] }>('/calibration/session/start'),
 
-  capturePoint: (ch: number) =>
-    post<{ status: string; session: CalibrationSession }>(`/calibration/point/capture?ch=${ch}`),
+  capturePoint: () =>
+    post<{ status: string; reference_temp_c: number; reference_temp_f: number; sessions: CalibrationSession[] }>('/calibration/point/capture'),
 
-  solve: (ch: number) =>
-    post<{ status: string; channel: number; coefficients: SteinhartHartCoeffs }>(`/calibration/solve?ch=${ch}`),
+  solve: () =>
+    post<{ status: string; channels: CalibrationChannelResult[] }>('/calibration/solve'),
 
-  accept: (ch: number) =>
-    post<{ status: string; message: string }>(`/calibration/accept?ch=${ch}`),
+  accept: () =>
+    post<{ status: string; message: string; channels: CalibrationChannelResult[] }>('/calibration/accept'),
 };
 
 // ── OTA ──────────────────────────────────────────────────────────────────────
@@ -110,8 +107,9 @@ export const api = { temps, status, device, config, calibration, ota };
 
 // Re-export types so consumers can import from one place.
 export type { Snapshot, ChannelReading, StatusResponse, DeviceResponse,
-              DeviceConfig, ChannelConfig, DeviceConfigPatch, ConfigStatus,
-              SteinhartHartCoeffs, CalibrationLiveResponse, CalibrationSession,
+              DeviceConfig, ChannelConfig, DeviceConfigPatch,
+              SteinhartHartCoeffs, CalibrationLiveResponse, CalibrationChannelLive,
+              CalibrationChannelResult, CalibrationSession,
               CalibrationPoint, Stage, CookProfile, ProfilesResponse,
               OtaRollbackResponse } from './types.ts';
 export { ApiError } from './types.ts';
