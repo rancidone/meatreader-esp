@@ -2,6 +2,7 @@
 #include "ads1115.h"
 #include "therm_math.h"
 #include "config_mgr.h"
+#include "i2c_manager.h"
 #include "board.h"
 #include "esp_log.h"
 #include "esp_timer.h"
@@ -25,6 +26,9 @@ static const char *TAG = "sensor_mgr";
 
 // Number of consecutive errors before a channel is skipped for one tick.
 #define CONSEC_ERROR_SKIP_THRESHOLD  5
+// After this many all-channel-error cycles, reset the I2C bus to recover
+// from a stuck SDA/SCL line before the watchdog would fire.
+#define I2C_BUS_RESET_ERROR_CYCLES   3
 // Repeated warning logs are emitted on first occurrence, then every Nth repeat.
 #define WARN_REPEAT_EVERY            30
 // ADC stabilization: discard one conversion after each mux switch, then
@@ -36,7 +40,10 @@ static const char *TAG = "sensor_mgr";
 // ~200k–700k Ω). The raw threshold catches readings above ~2.75 V; the
 // resistance threshold catches any remaining high-resistance cases.
 // Both are well above the ~100 kΩ maximum for this thermistor at –20 °C.
-#define OPEN_CIRCUIT_RAW_THRESHOLD   22000
+// Physical max from this circuit is ~26384 (Vcc=3.3V, VFS=4.096V).
+// Setting threshold above that so cold-probe readings (~25k raw at 0°F) aren't
+// falsely rejected here; the resistance check below handles true open circuits.
+#define OPEN_CIRCUIT_RAW_THRESHOLD   26500
 #define OPEN_CIRCUIT_RES_OHMS        500000.0f
 
 struct sensor_mgr {
@@ -49,6 +56,8 @@ struct sensor_mgr {
     EventGroupHandle_t snapshot_event_group;
     // Per-channel EMA state. NaN = uninitialized (seeds on first sample).
     float              ema[CONFIG_NUM_CHANNELS];
+    // Counts consecutive cycles where every active channel errored.
+    uint8_t            all_error_cycles;
     // Per-channel consecutive error counter for hardware robustness.
     uint8_t            consecutive_errors[CONFIG_NUM_CHANNELS];
     // Per-channel warning repeat counters to prevent log spam.
@@ -238,6 +247,25 @@ static void sensor_task(void *pvParam)
             }
         }
 
+        // Count cycles where every enabled channel failed — trigger I2C bus
+        // reset before the task watchdog fires (which would reset the chip).
+        bool any_ok = false;
+        for (int i = 0; i < CONFIG_NUM_CHANNELS; i++) {
+            if (snap.channels[i].quality == SENSOR_QUALITY_OK) {
+                any_ok = true;
+                break;
+            }
+        }
+        if (!any_ok) {
+            if (mgr->all_error_cycles < UINT8_MAX) mgr->all_error_cycles++;
+            if (mgr->all_error_cycles >= I2C_BUS_RESET_ERROR_CYCLES) {
+                i2c_manager_reset_bus();
+                mgr->all_error_cycles = 0;
+            }
+        } else {
+            mgr->all_error_cycles = 0;
+        }
+
         xSemaphoreTake(mgr->lock, portMAX_DELAY);
         mgr->snapshot       = snap;
         mgr->snapshot_valid = true;
@@ -312,7 +340,7 @@ esp_err_t sensor_mgr_init(ads1115_handle_t ads, config_mgr_t *config,
 esp_err_t sensor_mgr_start(sensor_mgr_t *mgr)
 {
     BaseType_t ret = xTaskCreate(
-        sensor_task, "sensor_mgr", 4096, mgr,
+        sensor_task, "sensor_mgr", 6144, mgr,
         5,   // priority: same as HTTP server default
         &mgr->task_handle
     );
