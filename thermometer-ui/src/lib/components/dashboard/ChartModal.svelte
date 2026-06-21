@@ -144,7 +144,7 @@
     border-radius: var(--radius);
     width: 100%;
     max-width: 960px;
-    max-height: 90vh;
+    height: min(600px, 90vh);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -178,7 +178,6 @@
     flex: 1;
     min-height: 0;
     width: 100%;
-    height: 400px;
     padding: 0.5rem 1rem 1rem;
     box-sizing: border-box;
   }
