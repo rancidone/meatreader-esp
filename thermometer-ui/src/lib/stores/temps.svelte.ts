@@ -10,7 +10,7 @@
 //   tempsStore.history   ← Snapshot[] oldest-first (last ~60 s)
 //   tempsStore.error     ← last error message, or null
 
-import { connectSSE } from '../api/live.ts';
+import { connectSSE, temps as tempsApi } from '../api/live.ts';
 import type { Snapshot, SSEHandle } from '../api/live.ts';
 import { ui } from './ui.svelte.ts';
 
@@ -24,6 +24,19 @@ class TempsStore {
 
   start(): void {
     if (this.#handle !== null) return;   // already running
+
+    // Seed history from firmware ring buffer (1-min points, up to 6 h).
+    tempsApi.history().then(pts => {
+      if (this.history.length > 0) return;  // SSE already provided data
+      this.history = pts.map(pt => ({
+        timestamp: pt.t * 1000,
+        channels: pt.ch.map((temp_c, id) =>
+          temp_c !== null
+            ? { id, temperature_c: temp_c, quality: 'ok' as const }
+            : { id, temperature_c: 0, quality: 'disabled' as const }
+        ),
+      }));
+    }).catch(() => { /* non-fatal — SSE will fill in live data */ });
 
     this.#handle = connectSSE({
       onSnapshot: (snap) => {
