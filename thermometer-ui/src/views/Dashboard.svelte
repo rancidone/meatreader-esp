@@ -13,6 +13,9 @@
   const COLORS = ['#f97316', '#38bdf8'] as const;
 
   let chartOpen = $state(false);
+  let nowMs = $state(Date.now());
+  $effect(() => { const id = setInterval(() => { nowMs = Date.now(); }, 2000); return () => clearInterval(id); });
+  const isConnected = $derived(deviceStore.connected || (tempsStore.lastUpdated !== null && nowMs - tempsStore.lastUpdated < 10_000));
 
   $effect(() => {
     if (ui.polling) {
@@ -41,7 +44,6 @@
   <!-- ── Status bar ───────────────────────────────────────────────────── -->
   <div class="status-bar">
     <div class="row">
-      {@const isConnected = deviceStore.connected || (tempsStore.lastUpdated !== null && Date.now() - tempsStore.lastUpdated < 10_000)}
       <span class="dot" class:connected={isConnected}></span>
       <span class="muted">{isConnected ? 'Connected' : 'Disconnected'}</span>
       {#if deviceStore.statusData?.firmware}
