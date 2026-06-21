@@ -12,6 +12,7 @@
 //   profileStore.applyProfileToChannel(channelIdx, profileIdx)
 
 import { config as configApi } from '../api/live.ts';
+import { configStore } from './config.svelte.ts';
 import type { CookProfile, ProfilesResponse } from '../api/types.ts';
 import { ApiError } from '../api/types.ts';
 
@@ -254,33 +255,18 @@ class ProfileStore {
     this.#selection = next;
     saveSelectionToStorage(next);
 
-    // Update alert target for this channel via config API
+    // Update alert target for this channel via config store (keeps UI in sync).
     const firstStageTargetC = profile.stages[0].target_temp_c;
     this.loading = true;
     this.error   = null;
     try {
-      // We need current alerts to build the patch without clobbering other channels.
-      // We'll fetch current config first.
-      const cfgStatus = await configApi.get();
-      const currentAlerts = cfgStatus.alerts ?? [];
-
-      // Build updated alerts array — ensure slot exists for channelIdx
+      const currentAlerts = configStore.status?.alerts ?? [];
       const updatedAlerts = [...currentAlerts];
       while (updatedAlerts.length <= channelIdx) {
-        updatedAlerts.push({
-          enabled: false,
-          target_temp_c: 100,
-          method: 'none',
-          webhook_url: '',
-        });
+        updatedAlerts.push({ enabled: false, target_temp_c: 100, method: 'none', webhook_url: '' });
       }
-      updatedAlerts[channelIdx] = {
-        ...updatedAlerts[channelIdx],
-        enabled: true,
-        target_temp_c: firstStageTargetC,
-      };
-
-      await configApi.patch({ alerts: updatedAlerts });
+      updatedAlerts[channelIdx] = { ...updatedAlerts[channelIdx], enabled: true, target_temp_c: firstStageTargetC };
+      await configStore.patch({ alerts: updatedAlerts });
     } catch (e) {
       this.error = e instanceof Error ? e.message : String(e);
     } finally {
@@ -295,13 +281,13 @@ class ProfileStore {
     this.loading = true;
     this.error   = null;
     try {
-      const cfgStatus = await configApi.get();
-      const updatedAlerts = [...(cfgStatus.alerts ?? [])];
+      const currentAlerts = configStore.status?.alerts ?? [];
+      const updatedAlerts = [...currentAlerts];
       while (updatedAlerts.length <= channelIdx) {
         updatedAlerts.push({ enabled: false, target_temp_c: 100, method: 'none', webhook_url: '' });
       }
       updatedAlerts[channelIdx] = { ...updatedAlerts[channelIdx], enabled: true, target_temp_c: tempC };
-      await configApi.patch({ alerts: updatedAlerts });
+      await configStore.patch({ alerts: updatedAlerts });
     } catch (e) {
       this.error = e instanceof Error ? e.message : String(e);
     } finally {
