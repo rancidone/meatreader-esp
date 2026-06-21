@@ -137,11 +137,10 @@
       xhr.onerror = () => reject(new Error('Network error during upload'));
       xhr.ontimeout = () => reject(new Error('Upload timed out'));
 
-      xhr.open('POST', '/ota/upload');
+      xhr.open('POST', '/ota');
       xhr.timeout = 120_000; // 2 min
-      const form = new FormData();
-      form.append('firmware', file, file.name);
-      xhr.send(form);
+      xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+      xhr.send(file);
     });
   }
 
@@ -187,7 +186,7 @@
 
   // ── Derived ──────────────────────────────────────────────────────────────────
 
-  const statusLabel = $derived((): string => {
+  function statusLabel(): string {
     switch (phase) {
       case 'idle':      return 'Select a firmware .bin file to begin.';
       case 'selected':  return `Ready to flash: ${selectedFile?.name ?? ''}`;
@@ -199,7 +198,7 @@
       case 'done':      return 'Update successful!';
       case 'error':     return `Error: ${errorMsg}`;
     }
-  });
+  }
 
   const isWorking = $derived(
     phase === 'uploading' || phase === 'flashing' || phase === 'rebooting' || phase === 'polling'
@@ -269,7 +268,7 @@
       class:status-error={phase === 'error'}
       class:status-done={phase === 'done'}
     >
-      {statusLabel}
+      {statusLabel()}
     </p>
 
     <!-- Progress bar (uploading only) -->
