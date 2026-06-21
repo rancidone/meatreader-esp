@@ -41,8 +41,9 @@
   <!-- ── Status bar ───────────────────────────────────────────────────── -->
   <div class="status-bar">
     <div class="row">
-      <span class="dot" class:connected={deviceStore.connected}></span>
-      <span class="muted">{deviceStore.connected ? 'Connected' : 'Disconnected'}</span>
+      {@const isConnected = deviceStore.connected || (tempsStore.lastUpdated !== null && Date.now() - tempsStore.lastUpdated < 10_000)}
+      <span class="dot" class:connected={isConnected}></span>
+      <span class="muted">{isConnected ? 'Connected' : 'Disconnected'}</span>
       {#if deviceStore.statusData?.firmware}
         <span class="muted">· {deviceStore.statusData.firmware}</span>
       {/if}
