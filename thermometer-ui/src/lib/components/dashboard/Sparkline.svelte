@@ -28,6 +28,10 @@
       .filter((p): p is { x: number; y: number } => p !== null);
 
     draw(el, points, color, unit, minDisplaySpan);
+
+    const ro = new ResizeObserver(() => draw(el, points, color, unit, minDisplaySpan));
+    ro.observe(el);
+    return () => ro.disconnect();
   });
 
   function draw(
@@ -114,5 +118,11 @@
     height: 56px;
     border-radius: var(--radius);
     background: var(--color-surface-alt);
+  }
+
+  @media (min-width: 640px) {
+    canvas {
+      height: 96px;
+    }
   }
 </style>

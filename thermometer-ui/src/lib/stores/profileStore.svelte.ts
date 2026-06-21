@@ -50,17 +50,52 @@ export const STARTER_LIBRARY: CookProfile[] = [
     ],
   },
   {
+    name: 'Chicken Legs',
+    num_stages: 1,
+    stages: [
+      { label: 'Done (texture)', target_temp_c: fToC(175), alert_method: 'none' },
+    ],
+  },
+  {
+    name: 'Chicken Thighs',
+    num_stages: 1,
+    stages: [
+      { label: 'Done (texture)', target_temp_c: fToC(175), alert_method: 'none' },
+    ],
+  },
+  {
+    name: 'Whole Chicken',
+    num_stages: 1,
+    stages: [
+      { label: 'Done (USDA)', target_temp_c: fToC(165), alert_method: 'none' },
+    ],
+  },
+  {
+    name: 'Chicken Wings',
+    num_stages: 1,
+    stages: [
+      { label: 'Done (texture)', target_temp_c: fToC(175), alert_method: 'none' },
+    ],
+  },
+  {
+    name: 'Burgers',
+    num_stages: 1,
+    stages: [
+      { label: 'Done (USDA)', target_temp_c: fToC(160), alert_method: 'none' },
+    ],
+  },
+  {
     name: 'Medium-Rare Beef',
     num_stages: 1,
     stages: [
-      { label: 'Pull temp', target_temp_c: fToC(130), alert_method: 'none' },
+      { label: 'Pull temp', target_temp_c: fToC(125), alert_method: 'none' },
     ],
   },
   {
     name: 'Medium Beef',
     num_stages: 1,
     stages: [
-      { label: 'Pull temp', target_temp_c: fToC(145), alert_method: 'none' },
+      { label: 'Pull temp', target_temp_c: fToC(140), alert_method: 'none' },
     ],
   },
 ];
@@ -227,7 +262,7 @@ class ProfileStore {
       // We need current alerts to build the patch without clobbering other channels.
       // We'll fetch current config first.
       const cfgStatus = await configApi.get();
-      const currentAlerts = cfgStatus.staged.alerts ?? [];
+      const currentAlerts = cfgStatus.alerts ?? [];
 
       // Build updated alerts array — ensure slot exists for channelIdx
       const updatedAlerts = [...currentAlerts];
@@ -245,8 +280,28 @@ class ProfileStore {
         target_temp_c: firstStageTargetC,
       };
 
-      await configApi.patchStaged({ alerts: updatedAlerts });
-      await configApi.apply();
+      await configApi.patch({ alerts: updatedAlerts });
+    } catch (e) {
+      this.error = e instanceof Error ? e.message : String(e);
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  // ── Quick target (bypasses profile selection) ──────────────────────────
+
+  async setQuickTarget(channelIdx: number, tempC: number): Promise<void> {
+    this.clearChannelProfile(channelIdx);
+    this.loading = true;
+    this.error   = null;
+    try {
+      const cfgStatus = await configApi.get();
+      const updatedAlerts = [...(cfgStatus.alerts ?? [])];
+      while (updatedAlerts.length <= channelIdx) {
+        updatedAlerts.push({ enabled: false, target_temp_c: 100, method: 'none', webhook_url: '' });
+      }
+      updatedAlerts[channelIdx] = { ...updatedAlerts[channelIdx], enabled: true, target_temp_c: tempC };
+      await configApi.patch({ alerts: updatedAlerts });
     } catch (e) {
       this.error = e instanceof Error ? e.message : String(e);
     } finally {

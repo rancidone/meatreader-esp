@@ -225,6 +225,12 @@
           <th>Platform</th>
           <td>{deviceInfo?.platform ?? '—'}</td>
         </tr>
+        {#if deviceInfo?.build_date}
+          <tr>
+            <th>Built</th>
+            <td>{deviceInfo.build_date} {deviceInfo.build_time ?? ''}</td>
+          </tr>
+        {/if}
       </tbody>
     </table>
   </div>

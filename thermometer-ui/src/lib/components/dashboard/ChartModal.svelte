@@ -65,15 +65,13 @@
         {
           label:    'Ch 0',
           stroke:   colors[0],
-          fill:     colors[0] + '22',
-          width:    1.5,
+          width:    2,
           spanGaps: false,
         },
         {
           label:    'Ch 1',
           stroke:   colors[1],
-          fill:     colors[1] + '22',
-          width:    1.5,
+          width:    2,
           spanGaps: false,
         },
       ],

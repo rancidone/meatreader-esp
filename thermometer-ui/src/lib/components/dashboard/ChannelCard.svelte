@@ -72,6 +72,19 @@
     return Math.max(0, nowMs - stallAt);
   });
 
+  // ── Quick target ─────────────────────────────────────────────────────────────
+
+  let quickTargetInput = $state('');
+
+  function submitQuickTarget(e?: Event) {
+    e?.preventDefault();
+    const val = parseFloat(quickTargetInput);
+    if (!isFinite(val)) return;
+    const tempC = unit === 'F' ? (val - 32) * 5 / 9 : val;
+    void profileStore.setQuickTarget(channelIdx, tempC);
+    quickTargetInput = '';
+  }
+
   // ── Profile selector ────────────────────────────────────────────────────────
 
   // Build a flat list of all profile options: starter library + custom API profiles
@@ -203,6 +216,18 @@
     </select>
   </div>
 
+  <!-- Quick target -->
+  <form class="quick-target" onsubmit={submitQuickTarget}>
+    <input
+      type="number"
+      class="quick-target-input"
+      bind:value={quickTargetInput}
+      placeholder="Target °{unit}"
+      step="1"
+    />
+    <button type="submit" class="quick-target-btn" disabled={!quickTargetInput}>Set</button>
+  </form>
+
   <!-- Multi-stage cook progress -->
   {#if activeProfile && activeProfile.num_stages > 1 && reading?.quality === 'ok'}
     <div class="stage-progress">
@@ -263,7 +288,7 @@
   {/if}
 
   <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-  <div class="sparkline-wrap" class:clickable={!!onclick} {onclick}>
+  <div class="sparkline-wrap" class:clickable={!!onclick} onclick={() => onclick?.()}>
     <Sparkline {snapshots} channelId={reading?.id ?? 0} {unit} {color} />
     {#if onclick}
       <span class="expand-hint">expand ↗</span>
@@ -347,6 +372,51 @@
   .profile-selector select:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+
+  /* ── Quick target ────────────────────────────────────────────────────────── */
+
+  .quick-target {
+    display: flex;
+    gap: var(--gap-xs);
+  }
+
+  .quick-target-input {
+    flex: 1;
+    background: var(--color-surface-alt);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    color: var(--color-text);
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+    min-width: 0;
+  }
+
+  .quick-target-input::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  .quick-target-btn {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.7rem;
+    font-family: var(--font-mono);
+    border-radius: var(--radius);
+    background: var(--color-accent);
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    opacity: 0.9;
+    flex-shrink: 0;
+  }
+
+  .quick-target-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  .quick-target-btn:not(:disabled):hover {
+    opacity: 1;
   }
 
   /* ── Stage progress ──────────────────────────────────────────────────────── */
