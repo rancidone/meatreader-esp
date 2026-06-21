@@ -216,7 +216,8 @@
     </select>
   </div>
 
-  <!-- Quick target -->
+  <!-- Quick target — only when no profile selected -->
+  {#if !selectedRef}
   <form class="quick-target" onsubmit={submitQuickTarget}>
     <input
       type="number"
@@ -227,6 +228,7 @@
     />
     <button type="submit" class="quick-target-btn" disabled={!quickTargetInput}>Set</button>
   </form>
+  {/if}
 
   <!-- Multi-stage cook progress -->
   {#if activeProfile && activeProfile.num_stages > 1 && reading?.quality === 'ok'}
