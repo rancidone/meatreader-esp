@@ -50,7 +50,7 @@ bool sensor_mgr_get_latest(sensor_mgr_t *mgr, sensor_snapshot_t *out_snap);
 EventGroupHandle_t sensor_mgr_get_event_group(sensor_mgr_t *mgr);
 
 // Maximum number of history points the ring buffer holds.
-#define SENSOR_HISTORY_POINTS  360
+#define SENSOR_HISTORY_POINTS  1440
 
 // History point returned by sensor_mgr_copy_history().
 // temp_x10[i] is temperature × 10 in °C (INT16_MIN = no data for that channel).

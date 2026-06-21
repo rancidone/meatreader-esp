@@ -28,10 +28,10 @@ static const char *TAG = "sensor_mgr";
 // Number of consecutive errors before a channel is skipped for one tick.
 #define CONSEC_ERROR_SKIP_THRESHOLD  5
 
-// History ring buffer — one point per minute, 8 bytes each.
-// SENSOR_HISTORY_POINTS × 8 bytes = 2.88 KB covers 6 hours at 1-min resolution.
+// History ring buffer — one point per 15 s, 8 bytes each.
+// 1440 × 8 bytes = 11.5 KB covers 6 hours at 15-s resolution.
 #define HISTORY_POINTS       SENSOR_HISTORY_POINTS
-#define HISTORY_INTERVAL_MS  60000  // push one point every 60 s
+#define HISTORY_INTERVAL_MS  15000  // push one point every 15 s
 
 typedef struct {
     int32_t  timestamp_s;                     // Unix epoch seconds (approx: boot_epoch + uptime)
