@@ -37,6 +37,13 @@ i2c_master_bus_handle_t i2c_manager_get_bus(void)
     return s_bus;
 }
 
+esp_err_t i2c_manager_reset_bus(void)
+{
+    if (!s_bus) return ESP_ERR_INVALID_STATE;
+    ESP_LOGW(TAG, "Resetting I2C bus (stuck slave recovery)");
+    return i2c_master_bus_reset(s_bus);
+}
+
 void i2c_manager_deinit(void)
 {
     if (s_bus != NULL) {
