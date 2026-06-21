@@ -5,6 +5,7 @@
   import { ui }          from '../lib/stores/ui.svelte.ts';
   import { predictions } from '../lib/stores/predictions.svelte.ts';
   import { formatAge }   from '../lib/utils/format.ts';
+  import { alertWatcher } from '../lib/stores/alertWatcher.svelte.ts';
   import ChannelCard     from '../lib/components/dashboard/ChannelCard.svelte';
   import ChartModal      from '../lib/components/dashboard/ChartModal.svelte';
 
@@ -83,10 +84,11 @@
         snapshots={tempsStore.history}
         unit={ui.unit}
         color={COLORS[idx]}
-        label={configStore.status?.active.channels[idx]?.label}
+        label={configStore.status?.channels[idx]?.label}
         channelIdx={idx}
         prediction={predictions.forChannel(idx)}
-        onclick={() => chartOpen = true}
+        alertActive={alertWatcher.alertActive[idx] ?? false}
+        onclick={() => alertWatcher.acknowledge(idx)}
       />
     {/each}
   </div>

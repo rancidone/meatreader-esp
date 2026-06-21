@@ -14,6 +14,7 @@ static http_app_ctx_t    s_ctx;
 
 // Forward declarations — normal operation routes
 esp_err_t handle_temps_latest(httpd_req_t *req);
+esp_err_t handle_temps_history(httpd_req_t *req);
 esp_err_t handle_status(httpd_req_t *req);
 esp_err_t handle_device(httpd_req_t *req);
 esp_err_t handle_dashboard(httpd_req_t *req);
@@ -47,7 +48,8 @@ esp_err_t handle_provision_status(httpd_req_t *req);
 
 static const httpd_uri_t s_normal_uris[] = {
     // Temperature
-    { .uri = "/temps/latest",          .method = HTTP_GET,   .handler = handle_temps_latest       },
+    { .uri = "/temps/latest",           .method = HTTP_GET,   .handler = handle_temps_latest       },
+    { .uri = "/temps/history",          .method = HTTP_GET,   .handler = handle_temps_history      },
     // Status / device info
     { .uri = "/status",                .method = HTTP_GET,   .handler = handle_status             },
     { .uri = "/device",                .method = HTTP_GET,   .handler = handle_device             },

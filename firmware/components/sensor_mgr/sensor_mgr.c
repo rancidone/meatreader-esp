@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <stdint.h>
 
 static const char *TAG = "sensor_mgr";
 
@@ -26,6 +27,16 @@ static const char *TAG = "sensor_mgr";
 
 // Number of consecutive errors before a channel is skipped for one tick.
 #define CONSEC_ERROR_SKIP_THRESHOLD  5
+
+// History ring buffer — one point per minute, 8 bytes each.
+// SENSOR_HISTORY_POINTS × 8 bytes = 2.88 KB covers 6 hours at 1-min resolution.
+#define HISTORY_POINTS       SENSOR_HISTORY_POINTS
+#define HISTORY_INTERVAL_MS  60000  // push one point every 60 s
+
+typedef struct {
+    int32_t  timestamp_s;                     // Unix epoch seconds (approx: boot_epoch + uptime)
+    int16_t  temp_x10[CONFIG_NUM_CHANNELS];   // °C × 10 (int16 range: ±3276.7°C, enough)
+} history_point_t;
 // After this many all-channel-error cycles, reset the I2C bus to recover
 // from a stuck SDA/SCL line before the watchdog would fire.
 #define I2C_BUS_RESET_ERROR_CYCLES   3
@@ -62,6 +73,14 @@ struct sensor_mgr {
     uint8_t            consecutive_errors[CONFIG_NUM_CHANNELS];
     // Per-channel warning repeat counters to prevent log spam.
     uint16_t           warn_repeat_counts[CONFIG_NUM_CHANNELS][5];
+    // History ring buffer (one point/minute, downsampled from EMA).
+    history_point_t    history[HISTORY_POINTS];
+    int                history_head;    // next write index (ring buffer)
+    int                history_count;   // number of valid entries (≤ HISTORY_POINTS)
+    int64_t            history_next_ms; // boot-time ms when next point should be pushed
+    // Per-channel accumulator for 1-minute downsampled average.
+    float              hist_acc[CONFIG_NUM_CHANNELS];
+    int                hist_acc_n[CONFIG_NUM_CHANNELS];
 };
 
 typedef enum {
@@ -274,6 +293,36 @@ static void sensor_task(void *pvParam)
         // Signal SSE clients that a new snapshot is available.
         xEventGroupSetBits(mgr->snapshot_event_group, SENSOR_MGR_SNAPSHOT_BIT);
 
+        // ── History downsampling ──────────────────────────────────────────────
+        // Accumulate per-channel OK readings; flush one averaged point per minute.
+        for (int i = 0; i < CONFIG_NUM_CHANNELS; i++) {
+            if (snap.channels[i].quality == SENSOR_QUALITY_OK) {
+                mgr->hist_acc[i]   += snap.channels[i].temperature_c;
+                mgr->hist_acc_n[i] += 1;
+            }
+        }
+        if (snap.timestamp_ms >= mgr->history_next_ms) {
+            history_point_t pt;
+            pt.timestamp_s = (int32_t)(snap.timestamp_ms / 1000);
+            for (int i = 0; i < CONFIG_NUM_CHANNELS; i++) {
+                if (mgr->hist_acc_n[i] > 0) {
+                    float avg = mgr->hist_acc[i] / (float)mgr->hist_acc_n[i];
+                    pt.temp_x10[i] = (int16_t)(avg * 10.0f);
+                } else {
+                    pt.temp_x10[i] = INT16_MIN;  // sentinel: no data
+                }
+                mgr->hist_acc[i]   = 0.0f;
+                mgr->hist_acc_n[i] = 0;
+            }
+            xSemaphoreTake(mgr->lock, portMAX_DELAY);
+            mgr->history[mgr->history_head] = pt;
+            mgr->history_head = (mgr->history_head + 1) % HISTORY_POINTS;
+            if (mgr->history_count < HISTORY_POINTS) mgr->history_count++;
+            xSemaphoreGive(mgr->lock);
+
+            mgr->history_next_ms = snap.timestamp_ms + HISTORY_INTERVAL_MS;
+        }
+
         // Pat the watchdog after a successful sampling cycle.
         esp_task_wdt_reset();
 
@@ -349,6 +398,25 @@ esp_err_t sensor_mgr_start(sensor_mgr_t *mgr)
         return ESP_FAIL;
     }
     return ESP_OK;
+}
+
+int sensor_mgr_copy_history(sensor_mgr_t *mgr,
+                             sensor_history_point_t *buf, int max_points)
+{
+    xSemaphoreTake(mgr->lock, portMAX_DELAY);
+    int count = mgr->history_count;
+    if (count > max_points) count = max_points;
+    // Copy oldest-first: oldest entry is at (head - history_count) mod HISTORY_POINTS.
+    int oldest = (mgr->history_head - mgr->history_count + HISTORY_POINTS) % HISTORY_POINTS;
+    for (int i = 0; i < count; i++) {
+        int src = (oldest + i) % HISTORY_POINTS;
+        buf[i].timestamp_s = mgr->history[src].timestamp_s;
+        for (int ch = 0; ch < CONFIG_NUM_CHANNELS; ch++) {
+            buf[i].temp_x10[ch] = mgr->history[src].temp_x10[ch];
+        }
+    }
+    xSemaphoreGive(mgr->lock);
+    return count;
 }
 
 bool sensor_mgr_get_latest(sensor_mgr_t *mgr, sensor_snapshot_t *out_snap)
