@@ -79,8 +79,16 @@
         {
           values: (_u, ticks) =>
             ticks.map(t => new Date(t * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
+          stroke: 'rgba(180,190,210,0.7)',
+          ticks:  { stroke: 'rgba(180,190,210,0.15)' },
+          grid:   { stroke: 'rgba(180,190,210,0.08)' },
         },
-        { label: yLabel },
+        {
+          label:  yLabel,
+          stroke: 'rgba(180,190,210,0.7)',
+          ticks:  { stroke: 'rgba(180,190,210,0.15)' },
+          grid:   { stroke: 'rgba(180,190,210,0.08)' },
+        },
       ],
       cursor: { drag: { x: true, y: false } },
     };
@@ -182,5 +190,17 @@
 
   :global(.chart-container .uplot) {
     width: 100% !important;
+  }
+
+  :global(.chart-container .u-axis .u-label),
+  :global(.chart-container .u-axis .u-value),
+  :global(.chart-container .u-legend .u-label),
+  :global(.chart-container .u-legend td) {
+    color: var(--color-text-muted) !important;
+  }
+
+  :global(.chart-container .u-axis line),
+  :global(.chart-container .u-axis path) {
+    stroke: var(--color-border) !important;
   }
 </style>
