@@ -3,54 +3,41 @@
   import { tempsStore } from '../lib/stores/temps.svelte.ts';
   import { deviceStore } from '../lib/stores/device.svelte.ts';
   import { consoleLog } from '../lib/stores/consoleLog.svelte.ts';
-  import { ui } from '../lib/stores/ui.svelte.ts';
 
   let logEl = $state<HTMLElement | undefined>(undefined);
   let autoScroll = $state(true);
 
-  // Plain (non-reactive) tracking vars — must not be $state or effects will loop
+  // Plain tracking vars — not $state, so writes don't trigger effects.
   let prevError: string | null = null;
   let prevConnected: boolean | null = null;
-  let snapshotCount = 0;
 
-  $effect(() => {
-    const snap = tempsStore.latest;
-    if (snap) {
-      snapshotCount++;
-      const chSummary = snap.channels
-        .filter(c => c.quality === 'ok')
-        .map(c => `ch${c.id}=${c.temperature_c !== undefined ? c.temperature_c.toFixed(1) + '°C' : '—'}`)
-        .join(' ');
-      if (chSummary) {
-        consoleLog.push('info', `snapshot #${snapshotCount}: ${chSummary}`);
-      }
-    }
-  });
-
+  // Log SSE errors and reconnects only — not every snapshot.
   $effect(() => {
     const err = tempsStore.error;
     if (err !== prevError) {
       const wasError = prevError;
       prevError = err;
-      if (err) consoleLog.push('error', `SSE: ${err}`);
-      else if (wasError !== null) consoleLog.push('info', 'SSE: reconnected');
+      if (err) untrack(() => consoleLog.push('error', `SSE: ${err}`));
+      else if (wasError !== null) untrack(() => consoleLog.push('info', 'SSE: reconnected'));
     }
   });
 
+  // Log device connectivity changes.
   $effect(() => {
     const connected = deviceStore.connected;
     if (prevConnected !== null && connected !== prevConnected) {
-      consoleLog.push(connected ? 'info' : 'warn',
-        connected ? 'device: connected' : `device: offline — ${deviceStore.error ?? 'unreachable'}`);
+      const msg = connected
+        ? 'device: connected'
+        : `device: offline — ${untrack(() => deviceStore.error) ?? 'unreachable'}`;
+      untrack(() => consoleLog.push(connected ? 'info' : 'warn', msg));
     }
     prevConnected = connected;
   });
 
-  // Auto-scroll to bottom when new entries arrive.
-  // autoScroll is read via untrack so the scroll event → onScroll → autoScroll
-  // write doesn't create a reactive loop.
+  // Auto-scroll: runs when entries change; reads autoScroll without tracking it
+  // so the scroll event → onScroll → autoScroll write doesn't loop.
   $effect(() => {
-    void consoleLog.entries.length; // reactive dependency
+    void consoleLog.entries.length;
     if (untrack(() => autoScroll) && logEl) {
       logEl.scrollTop = logEl.scrollHeight;
     }
@@ -58,17 +45,14 @@
 
   function onScroll() {
     if (!logEl) return;
-    const atBottom = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 8;
-    autoScroll = atBottom;
+    autoScroll = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 8;
   }
 
   function fmtTime(ts: number): string {
     const d = new Date(ts);
-    const hh = String(d.getHours()).padStart(2, '0');
-    const mm = String(d.getMinutes()).padStart(2, '0');
-    const ss = String(d.getSeconds()).padStart(2, '0');
-    const ms = String(d.getMilliseconds()).padStart(3, '0');
-    return `${hh}:${mm}:${ss}.${ms}`;
+    return [d.getHours(), d.getMinutes(), d.getSeconds()]
+      .map(n => String(n).padStart(2, '0'))
+      .join(':') + '.' + String(d.getMilliseconds()).padStart(3, '0');
   }
 </script>
 
@@ -150,9 +134,7 @@
     border-radius: 3px;
   }
 
-  .entry:hover {
-    background: var(--color-surface-alt);
-  }
+  .entry:hover { background: var(--color-surface-alt); }
 
   .ts {
     color: var(--color-text-muted);
@@ -171,7 +153,7 @@
   .entry.warn  .lvl { color: var(--color-warn); }
   .entry.error .lvl { color: var(--color-error); }
 
-  .entry.warn  { background: color-mix(in srgb, var(--color-warn) 6%, transparent); }
+  .entry.warn  { background: color-mix(in srgb, var(--color-warn)  6%, transparent); }
   .entry.error { background: color-mix(in srgb, var(--color-error) 8%, transparent); }
 
   .msg {
