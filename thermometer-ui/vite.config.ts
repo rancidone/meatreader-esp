@@ -4,6 +4,17 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   base: '/',
+  build: {
+    rollupOptions: {
+      output: {
+        // Stable filenames — no content hash — so the CMake embed step can
+        // reference fixed paths. Cache-busting is handled by OTA versioning.
+        entryFileNames: 'assets/index.js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name][extname]',
+      },
+    },
+  },
   plugins: [
     svelte(),
     VitePWA({

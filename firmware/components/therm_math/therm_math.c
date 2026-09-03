@@ -47,7 +47,7 @@ float therm_math_resistance_to_celsius(float resistance_ohms, const sh_coeffs_t 
 
 float therm_math_ema_update(float state, float new_value, float alpha)
 {
-    if (isnanf(state)) {
+    if (isnan(state)) {
         return new_value;  // first sample: seed filter with raw value
     }
     return alpha * new_value + (1.0f - alpha) * state;

@@ -9,8 +9,9 @@
   import ChannelCard     from '../lib/components/dashboard/ChannelCard.svelte';
   import ChartModal      from '../lib/components/dashboard/ChartModal.svelte';
 
-  // Channel accent colours — ch0 orange, ch1 sky blue.
-  const COLORS = ['#f97316', '#38bdf8'] as const;
+  // Channel accent colours. The firmware currently has four ADS1115 inputs;
+  // the modulo fallback keeps the dashboard usable if that expands later.
+  const COLORS = ['#f97316', '#38bdf8', '#a78bfa', '#34d399'] as const;
 
   let chartOpen = $state(false);
   let nowMs = $state(Date.now());
@@ -33,10 +34,12 @@
 
   $effect(() => { void configStore.fetch(); });
 
-  // Per-channel readings from the latest snapshot; null when no data yet.
-  const readings = $derived(
-    tempsStore.latest ? tempsStore.latest.channels : [null, null]
+  // Config is the stable source of channel count. Keep a four-channel fallback
+  // so cards render immediately while the first config request is in flight.
+  const channelIds = $derived(
+    configStore.status?.channels.map((_channel, index) => index) ?? [0, 1, 2, 3]
   );
+  const readings = $derived(tempsStore.latest?.channels ?? []);
 </script>
 
 <div class="col">
@@ -83,17 +86,17 @@
 
   <!-- ── Channel cards ────────────────────────────────────────────────── -->
   <div class="card-grid">
-    {#each [0, 1] as idx}
+    {#each channelIds as channelId}
       <ChannelCard
-        reading={readings[idx] ?? null}
+        reading={readings.find(reading => reading.id === channelId) ?? null}
         snapshots={tempsStore.history}
         unit={ui.unit}
-        color={COLORS[idx]}
-        label={configStore.status?.channels[idx]?.label}
-        channelIdx={idx}
-        prediction={predictions.forChannel(idx)}
-        alertActive={alertWatcher.alertActive[idx] ?? false}
-        onclick={() => { alertWatcher.acknowledge(idx); chartOpen = true; }}
+        color={COLORS[channelId % COLORS.length]}
+        label={configStore.status?.channels[channelId]?.label}
+        channelIdx={channelId}
+        prediction={predictions.forChannel(channelId)}
+        alertActive={alertWatcher.alertActive[channelId] ?? false}
+        onclick={() => { alertWatcher.acknowledge(channelId); chartOpen = true; }}
       />
     {/each}
   </div>
@@ -114,6 +117,8 @@
     history={tempsStore.history}
     unit={ui.unit}
     colors={COLORS}
+    {channelIds}
+    labels={configStore.status?.channels.map(channel => channel.label ?? '') ?? []}
     onclose={() => chartOpen = false}
   />
 {/if}

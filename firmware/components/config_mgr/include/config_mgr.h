@@ -5,14 +5,14 @@
 #include "esp_err.h"
 #include "therm_math.h"
 
-#define CONFIG_NUM_CHANNELS     2
+#define CONFIG_NUM_CHANNELS     4
 #define CONFIG_WIFI_SSID_MAX    64
 #define CONFIG_WIFI_PASS_MAX    64
 #define CONFIG_CHANNEL_LABEL_MAX 32
 
 // Bumped whenever device_config_t layout changes. Mismatched NVS blobs are
 // discarded and defaults are restored instead.
-#define CONFIG_SCHEMA_VERSION   6u
+#define CONFIG_SCHEMA_VERSION   7u
 
 // Per-channel thermistor configuration.
 typedef struct {

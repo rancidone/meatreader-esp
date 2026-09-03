@@ -12,13 +12,36 @@ static const char *TAG = "config_mgr";
 
 #define NVS_NAMESPACE   "meatreader"
 #define NVS_KEY_CONFIG  "dev_config"
-#define BLOB_VERSION    4u
+#define BLOB_VERSION    5u
+#define LEGACY_BLOB_VERSION 4u
+#define LEGACY_SCHEMA_VERSION 6u
+#define LEGACY_NUM_CHANNELS 2
 
 // Versioned NVS blob. Version field guards against struct layout changes.
 typedef struct {
     uint32_t       version;
     device_config_t data;
 } nvs_config_blob_t;
+
+// Firmware through schema v6 supported only AIN1 and AIN2. Keep this exact
+// layout so an installed device can retain its Wi-Fi settings, alerts, and
+// calibration data while the two new ADS1115 inputs are added.
+typedef struct {
+    uint32_t schema_version;
+    char  wifi_ssid[CONFIG_WIFI_SSID_MAX];
+    char  wifi_password[CONFIG_WIFI_PASS_MAX];
+    float sample_rate_hz;
+    float ema_alpha;
+    float spike_reject_delta_c;
+    channel_config_t channels[LEGACY_NUM_CHANNELS];
+    channel_alert_t  alerts[LEGACY_NUM_CHANNELS];
+    cook_profiles_t  cook;
+} legacy_device_config_t;
+
+typedef struct {
+    uint32_t               version;
+    legacy_device_config_t data;
+} legacy_nvs_config_blob_t;
 
 struct config_mgr {
     SemaphoreHandle_t lock;
@@ -39,7 +62,7 @@ static void apply_defaults(device_config_t *cfg)
     cfg->spike_reject_delta_c   = CONFIG_DEFAULT_SPIKE_REJECT_DELTA;
     for (int i = 0; i < CONFIG_NUM_CHANNELS; i++) {
         cfg->channels[i].enabled     = true;
-        cfg->channels[i].adc_channel = i + 1;  // AIN1, AIN2 (AIN0/AIN3 unused on this board)
+        cfg->channels[i].adc_channel = i;  // AIN0–AIN3, one thermistor connector per input
         cfg->channels[i].sh          = THERM_MATH_DEFAULT_COEFFS;
         snprintf(cfg->channels[i].label, CONFIG_CHANNEL_LABEL_MAX, "Channel %d", i);
         // alerts default: disabled, no target, no method
@@ -49,6 +72,41 @@ static void apply_defaults(device_config_t *cfg)
         cfg->alerts[i].webhook_url[0] = '\0';
         cfg->alerts[i].triggered     = false;
     }
+}
+
+static void migrate_legacy_config(const legacy_device_config_t *legacy,
+                                  device_config_t *out)
+{
+    apply_defaults(out);
+
+    // Preserve all device-wide settings. Force NUL termination because NVS
+    // data should always be treated as untrusted input.
+    memcpy(out->wifi_ssid, legacy->wifi_ssid, sizeof(out->wifi_ssid));
+    out->wifi_ssid[sizeof(out->wifi_ssid) - 1] = '\0';
+    memcpy(out->wifi_password, legacy->wifi_password, sizeof(out->wifi_password));
+    out->wifi_password[sizeof(out->wifi_password) - 1] = '\0';
+    out->sample_rate_hz = legacy->sample_rate_hz;
+    out->ema_alpha = legacy->ema_alpha;
+    out->spike_reject_delta_c = legacy->spike_reject_delta_c;
+    out->cook = legacy->cook;
+
+    // Legacy logical channel 0 was AIN1 and channel 1 was AIN2. Match by ADC
+    // input rather than by array index so their physical probe configuration
+    // remains attached to the same connector after adding AIN0 and AIN3.
+    for (int old_idx = 0; old_idx < LEGACY_NUM_CHANNELS; old_idx++) {
+        int new_idx = -1;
+        for (int i = 0; i < CONFIG_NUM_CHANNELS; i++) {
+            if (out->channels[i].adc_channel == legacy->channels[old_idx].adc_channel) {
+                new_idx = i;
+                break;
+            }
+        }
+        if (new_idx >= 0) {
+            out->channels[new_idx] = legacy->channels[old_idx];
+            out->alerts[new_idx] = legacy->alerts[old_idx];
+        }
+    }
+    out->schema_version = CONFIG_SCHEMA_VERSION;
 }
 
 // ── NVS I/O ───────────────────────────────────────────────────────────────────
@@ -65,28 +123,48 @@ static esp_err_t nvs_load_config(device_config_t *out)
         return err;
     }
 
-    nvs_config_blob_t blob;
-    size_t size = sizeof(blob);
-    err = nvs_get_blob(h, NVS_KEY_CONFIG, &blob, &size);
-    nvs_close(h);
+    size_t size = 0;
+    err = nvs_get_blob(h, NVS_KEY_CONFIG, NULL, &size);
+    if (err != ESP_OK) {
+        nvs_close(h);
+        return ESP_ERR_NOT_FOUND;
+    }
 
-    if (err != ESP_OK || size != sizeof(blob) || blob.version != BLOB_VERSION) {
+    if (size == sizeof(nvs_config_blob_t)) {
+        nvs_config_blob_t blob;
+        err = nvs_get_blob(h, NVS_KEY_CONFIG, &blob, &size);
+        nvs_close(h);
+        if (err != ESP_OK || blob.version != BLOB_VERSION) {
+            return ESP_ERR_NOT_FOUND;
+        }
+        *out = blob.data;
+    } else if (size == sizeof(legacy_nvs_config_blob_t)) {
+        legacy_nvs_config_blob_t legacy;
+        err = nvs_get_blob(h, NVS_KEY_CONFIG, &legacy, &size);
+        nvs_close(h);
+        if (err != ESP_OK || legacy.version != LEGACY_BLOB_VERSION ||
+            legacy.data.schema_version != LEGACY_SCHEMA_VERSION) {
+            return ESP_ERR_NOT_FOUND;
+        }
+        migrate_legacy_config(&legacy.data, out);
+        ESP_LOGI(TAG, "Migrated saved configuration from 2 to 4 channels");
+    } else {
+        nvs_close(h);
         return ESP_ERR_NOT_FOUND;
     }
 
     // Validate S-H coefficients; replace with defaults if corrupted.
     // Also backfill label if empty (e.g. blobs written before label was added).
     for (int i = 0; i < CONFIG_NUM_CHANNELS; i++) {
-        if (!therm_math_sh_valid(&blob.data.channels[i].sh)) {
+        if (!therm_math_sh_valid(&out->channels[i].sh)) {
             ESP_LOGW(TAG, "ch%d: invalid S-H coefficients in NVS, using defaults", i);
-            blob.data.channels[i].sh = THERM_MATH_DEFAULT_COEFFS;
+            out->channels[i].sh = THERM_MATH_DEFAULT_COEFFS;
         }
-        if (blob.data.channels[i].label[0] == '\0') {
-            snprintf(blob.data.channels[i].label, CONFIG_CHANNEL_LABEL_MAX, "Channel %d", i);
+        if (out->channels[i].label[0] == '\0') {
+            snprintf(out->channels[i].label, CONFIG_CHANNEL_LABEL_MAX, "Channel %d", i);
         }
     }
 
-    *out = blob.data;
     return ESP_OK;
 }
 

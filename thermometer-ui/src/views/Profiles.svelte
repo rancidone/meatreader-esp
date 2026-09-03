@@ -17,7 +17,7 @@
   // ── Channel list from config ────────────────────────────────────────────
 
   const channels = $derived(
-    configStore.status?.active.channels ?? []
+    configStore.status?.channels ?? []
   );
 
   // ── Edit state ─────────────────────────────────────────────────────────

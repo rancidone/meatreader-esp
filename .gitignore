@@ -102,3 +102,17 @@ __pycache__/
 
 # Local dev tooling (not project files)
 Justfile
+
+# Local firmware outputs (may contain compiled-in Wi-Fi credentials)
+*.bin
+*.elf
+*.map
+
+# macOS metadata
+.DS_Store
+
+# KiCad local state, locks, and automatic backups
+*.kicad_prl
+*.lck
+*-backups/
+/pcb/production/backups/

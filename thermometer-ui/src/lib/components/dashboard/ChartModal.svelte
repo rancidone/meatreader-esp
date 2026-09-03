@@ -9,9 +9,11 @@
     history:  Snapshot[];
     unit:     TempUnit;
     colors:   readonly string[];
+    channelIds: readonly number[];
+    labels: readonly string[];
     onclose:  () => void;
   }
-  const { history, unit, colors, onclose }: Props = $props();
+  const { history, unit, colors, channelIds, labels, onclose }: Props = $props();
 
   let container = $state<HTMLDivElement | undefined>(undefined);
   // $state so the data-update effect can track when the instance becomes ready.
@@ -20,17 +22,18 @@
 
   // Build aligned uPlot data arrays from history (recomputes when history/unit change).
   const chartData = $derived.by((): uPlot.AlignedData => {
-    const ts:  number[]         = [];
-    const ch0: (number | null)[] = [];
-    const ch1: (number | null)[] = [];
+    const ts: number[] = [];
+    const channels = channelIds.map((): (number | null)[] => []);
     for (const snap of history) {
       ts.push(snap.timestamp / 1000);   // uPlot uses Unix seconds
-      const c0 = snap.channels.find(c => c.id === 0);
-      const c1 = snap.channels.find(c => c.id === 1);
-      ch0.push(c0?.quality === 'ok' ? toDisplayTemp(c0.temperature_c, unit) : null);
-      ch1.push(c1?.quality === 'ok' ? toDisplayTemp(c1.temperature_c, unit) : null);
+      for (let index = 0; index < channelIds.length; index++) {
+        const reading = snap.channels.find(channel => channel.id === channelIds[index]);
+        channels[index].push(
+          reading?.quality === 'ok' ? toDisplayTemp(reading.temperature_c, unit) : null
+        );
+      }
     }
-    return [ts, ch0, ch1];
+    return [ts, ...channels];
   });
 
   // Create/destroy the uPlot instance when the container mounts or unit changes.
@@ -39,8 +42,14 @@
     const el = container;
     if (!el) return;
 
-    // Reading `unit` here so the chart is recreated when unit toggles (axis label).
+    // Reading these props recreates the chart if its series set changes.
     const yLabel = `°${unit}`;
+    const series = channelIds.map((channelId) => ({
+      label: labels[channelId] || `Ch ${channelId}`,
+      stroke: colors[channelId % colors.length],
+      width: 2,
+      spanGaps: false,
+    }));
 
     const opts: uPlot.Options = {
       width:  el.clientWidth  || 800,
@@ -62,18 +71,7 @@
       },
       series: [
         {},
-        {
-          label:    'Ch 0',
-          stroke:   colors[0],
-          width:    2,
-          spanGaps: false,
-        },
-        {
-          label:    'Ch 1',
-          stroke:   colors[1],
-          width:    2,
-          spanGaps: false,
-        },
+        ...series,
       ],
       axes: [
         {
@@ -94,7 +92,11 @@
     };
 
     // Start with empty data; the data-update effect below fills it in.
-    const instance = new uPlot(opts, [[], [], []], el);
+    const instance = new uPlot(
+      opts,
+      Array.from({ length: channelIds.length + 1 }, () => []) as uPlot.AlignedData,
+      el
+    );
     uplotInstance = instance;
 
     return () => {

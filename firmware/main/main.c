@@ -20,7 +20,6 @@
 #include "esp_netif.h"
 #include "esp_event.h"
 #include "esp_log.h"
-#include "storage.h"
 #include "board.h"
 #include "i2c_manager.h"
 #include "ads1115.h"
@@ -50,9 +49,6 @@ void app_main(void)
         err = nvs_flash_init();
     }
     ESP_ERROR_CHECK(err);
-
-    // ── SPIFFS ────────────────────────────────────────────────────────────
-    storage_fs_init(); // non-fatal; storage module logs outcome
 
     // ── Networking init (required before WiFi) ────────────────────────────
     ESP_ERROR_CHECK(esp_netif_init());

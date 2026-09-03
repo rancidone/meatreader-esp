@@ -8,8 +8,7 @@
 
 // ── ADS1115 ───────────────────────────────────────────────────────────────────
 #define BOARD_ADS1115_ADDR  0x48  // ADDR pin tied to GND
-// Probe connectors are wired to AIN1 (ch0) and AIN2 (ch1). AIN0 and AIN3 are
-// unconnected on this board revision.
+// Four thermistor probe connectors are wired one-to-one to AIN0–AIN3.
 
 // ── DS18B20 ───────────────────────────────────────────────────────────────────
 #define BOARD_DS18B20_PIN   13
@@ -32,4 +31,3 @@
 #define BOARD_ADS_VFS          4.096f   // full-scale voltage for selected PGA
 #define BOARD_ADC_VREF         3.3f     // divider supply voltage
 #define BOARD_ADC_MAX          32767.0f // ADS1115 max count (16-bit signed)
-

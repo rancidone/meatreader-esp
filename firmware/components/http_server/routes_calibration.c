@@ -4,7 +4,10 @@
 // A single DS18B20 read is shared across channels on each capture.
 
 #include "http_util.h"
+#include "therm_math.h"
+#include "board.h"
 #include "esp_log.h"
+#include <math.h>
 
 static const char *TAG = "route_cal";
 
@@ -57,6 +60,21 @@ esp_err_t handle_cal_live(httpd_req_t *req)
             cJSON_AddNumberToObject(ch, "thermistor_temp_f", cr->temperature_c * 9.0f / 5.0f + 32.0f);
             cJSON_AddNumberToObject(ch, "raw_adc",           cr->raw_adc);
             cJSON_AddStringToObject(ch, "quality",           quality_str);
+
+            // Also compute temperature using default S-H coefficients so the UI
+            // can show how much the calibration has shifted the reading.
+            float res_default = therm_math_adc_to_resistance(
+                (int16_t)cr->raw_adc,
+                BOARD_R_TOP_OHMS, BOARD_R_SERIES_OHMS,
+                BOARD_ADS_VFS, BOARD_ADC_VREF, BOARD_ADC_MAX);
+            float temp_default = therm_math_resistance_to_celsius(res_default, &THERM_MATH_DEFAULT_COEFFS);
+            if (!isnanf(temp_default) && !isinff(temp_default)) {
+                cJSON_AddNumberToObject(ch, "temp_default_c", temp_default);
+                cJSON_AddNumberToObject(ch, "temp_default_f", temp_default * 9.0f / 5.0f + 32.0f);
+            } else {
+                cJSON_AddNullToObject(ch, "temp_default_c");
+                cJSON_AddNullToObject(ch, "temp_default_f");
+            }
         } else {
             cJSON_AddNullToObject(ch, "thermistor_temp_c");
             cJSON_AddNullToObject(ch, "thermistor_temp_f");
