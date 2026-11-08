@@ -14,9 +14,8 @@ Open http://localhost:5173
 
 ## Pointing at the device
 
-By default, API calls are proxied to `http://localhost:8080` (the default
-`jag` HTTP port). To point at a real device, edit `vite.config.ts` and change
-the `proxy.target` values to your device's IP, e.g.:
+API calls use the development proxy targets in `vite.config.ts`. Set all
+of those targets to your device's LAN address before starting the dev server, e.g.:
 
 ```ts
 proxy: {
@@ -34,8 +33,11 @@ proxy: {
 npm run build
 ```
 
-Output lands in `dist/`. These static assets can be served from flash on the
-ESP32 in a later pass.
+Output lands in `dist/`. The firmware build packages these static assets into
+SPIFFS for serving from the ESP32. See the root README for build and flash steps.
+
+Without a connected device, the dashboard shows its disconnected state, not
+live probe readings. An interface preview is not hardware validation.
 
 ## Structure
 
